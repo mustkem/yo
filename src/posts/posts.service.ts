@@ -57,7 +57,8 @@ export class PostsService {
    * @description find post by id
    */
   async getPost(id: string): Promise<PostEntity> {
-    return this.postsRepository.findOne(id, {
+    return this.postsRepository.findOne({
+      where: { id },
       relations: [
         'author',
         'origPost',
@@ -100,15 +101,21 @@ export class PostsService {
     newPost.author = author;
 
     if (originalPostId) {
-      const origPost = await this.postsRepository.findOne(originalPostId);
+      const origPost = await this.postsRepository.findOne({
+        where: { id: originalPostId },
+      });
+
       if (!origPost) {
         throw new NotFoundException('Original post not found');
       }
+
       newPost.origPost = origPost;
     }
 
     if (replyToPostId) {
-      const replyTo = await this.postsRepository.findOne(replyToPostId);
+      const replyTo = await this.postsRepository.findOne({
+        where: { id: replyToPostId },
+      });
       if (!replyTo) {
         throw new NotFoundException('Original post not found');
       }

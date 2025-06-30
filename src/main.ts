@@ -1,35 +1,27 @@
 import { NestFactory } from '@nestjs/core';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import compression from 'fastify-compress';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as compression from 'compression';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    new FastifyAdapter(),
-  );
+  const app = await NestFactory.create(AppModule);
+
+  app.use(compression());
 
   const config = new DocumentBuilder()
     .setTitle('Yoo API')
     .setDescription('API for shitposting social network')
+    .setVersion('1.0')
     .addBearerAuth({
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'Token',
     })
-    .setVersion('1.0')
     .addTag('posts')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-
-  app.register(compression, {
-    encodings: ['gzip'],
-  });
 
   await app.listen(3000);
 }
