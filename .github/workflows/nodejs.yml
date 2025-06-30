@@ -13,27 +13,38 @@ jobs:
 
     services:
       mysql:
-        image: mysql:latest
+        image: mysql:8.0
         env:
-          MYSQL_DB: yoodb_test
-          MYSQL_PASSWORD: yoopass
+          MYSQL_DATABASE: yoodb_test
+          MYSQL_ROOT_PASSWORD: rootpass
           MYSQL_USER: yooadmin
+          MYSQL_PASSWORD: yoopass
         ports:
-          - 5432:5432
-        # Set health checks to wait until postgres has started
+          - 3306:3306
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    strategy:
-      matrix:
-        node-version: [14.x, 16.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Wait for MySQL
+        run: |
+          until mysqladmin ping -h 127.0.0.1 -uroot -prootpass --silent; do
+            echo "Waiting for database connection..."
+            sleep 3
+          done
 
       - name: Cache node modules
         uses: actions/cache@v4
@@ -46,11 +57,6 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
 
       - name: Run CI
         run: npm ci
