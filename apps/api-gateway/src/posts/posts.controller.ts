@@ -25,6 +25,7 @@ class PostCreateRequestBody {
   @ApiProperty() text: string;
   @ApiPropertyOptional() originalPostId: string;
   @ApiPropertyOptional() replyToPostId: string;
+  @ApiPropertyOptional() links: string[];
 }
 
 class PostDetailsQueryParams {
@@ -61,6 +62,7 @@ export class PostsController {
       author,
       post.originalPostId,
       post.replyToPostId,
+      post.links,
     );
     return createdPost;
   }

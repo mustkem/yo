@@ -33,6 +33,9 @@ export class PostEntity extends YooBaseEntity {
   @OneToOne(() => PostEntity)
   @JoinColumn({ name: 'reply_to_id' })
   replyTo: PostEntity;
+
+  @Column('json', { nullable: true })
+  links: Array<string>;
 }
 
 class Mention {

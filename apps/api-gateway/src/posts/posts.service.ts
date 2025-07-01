@@ -85,6 +85,7 @@ export class PostsService {
     author: UserEntity,
     originalPostId: string,
     replyToPostId: string,
+    links: string[],
   ): Promise<PostEntity> {
     // TODO: detect #hashtags in the post and create hashtag entities for them
     // TODO: deletect @user mentions in the post
@@ -120,6 +121,10 @@ export class PostsService {
         throw new NotFoundException('Original post not found');
       }
       newPost.replyTo = replyTo;
+    }
+
+    if (links) {
+      newPost.links = links;
     }
 
     const savedPost = await this.postsRepository.save(newPost);
