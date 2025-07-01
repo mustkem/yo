@@ -61,7 +61,10 @@ export class AuthService {
   }
 
   async getUserFromSessionToken(token: string): Promise<UserEntity> {
-    const session = await this.sessionRepo.findOne({ where: { id: token } });
+    const session = await this.sessionRepo.findOne({
+      where: { id: token },
+      relations: ['user'],
+    });
     if (!session) {
       throw new UnauthorizedException('Session not found');
     }
