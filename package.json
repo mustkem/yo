@@ -6,6 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "db:up": "docker compose -f docker-compose.yml up -d mysql",
+    "db:down": "docker compose -f docker-compose.yml down",
+    "db:logs": "docker compose -f docker-compose.yml logs -f mysql",
     "doc": "npx @compodoc/compodoc -p tsconfig.json -d ./docs",
     "prebuild": "rimraf dist",
     "postinstall": "node build/postInstall.js",
@@ -38,7 +41,8 @@
     "reflect-metadata": "^0.1.14",
     "rimraf": "^6.0.1",
     "rxjs": "^7.8.2",
-    "typeorm": "^0.3.25"
+    "typeorm": "^0.3.25",
+    "typeorm-naming-strategies": "^4.1.0"
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.26",

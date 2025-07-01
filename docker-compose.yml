@@ -1,32 +1,17 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  yoo-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: yoo-backend
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env.dev
-    volumes:
-      - .:/app
-      - /app/node_modules
-    depends_on:
-      - mysql
-    command: yarn start:dev
-
   mysql:
-    image: mysql:8
+    image: mysql:8.3
     container_name: yoo-mysql
-    ports:
-      - "3307:3306"  # Use 3307 to avoid conflict with local MySQL
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: yoodb
-      MYSQL_USER: yoo
+      MYSQL_USER: yooadmin
       MYSQL_PASSWORD: yoopass
+    ports:
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 
