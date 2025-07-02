@@ -9,6 +9,7 @@
     "db:up": "docker compose -f docker-compose.yml up -d mysql",
     "db:down": "docker compose -f docker-compose.yml down",
     "db:logs": "docker compose -f docker-compose.yml logs -f mysql",
+    "db:seed": "ts-node -r tsconfig-paths/register database/seeder.ts",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm migration:generate -- -d apps/api-gateway/src/commons/data-source.ts database/migrations/$npm_config_name",
     "migration:run": "npm run typeorm migration:run -- -d apps/api-gateway/src/commons/data-source.ts",
