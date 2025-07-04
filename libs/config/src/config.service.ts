@@ -13,7 +13,6 @@ export class AppConfigService {
   public get kafka() {
     return {
       broker: this.config.get('KAFKA_BROKER') || '',
-      topic: this.config.get('KAFKA_TOPIC') || '',
     };
   }
 }

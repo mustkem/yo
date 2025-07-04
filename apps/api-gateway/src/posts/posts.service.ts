@@ -9,12 +9,15 @@ import { PostsRepository } from './posts.repository';
 import { LikesService } from '../likes/likes.service';
 import { AuthService } from '../auth/auth.service';
 import { UserEntity } from '../users/users.entity';
+import { KafkaProducerService } from 'libs/kafka/src/kafka.producer.service';
+import { KafkaTopics } from 'libs/kafka/src/kafka.config';
 
 @Injectable()
 export class PostsService {
   constructor(
-    private readonly likesService: LikesService,
     private readonly authService: AuthService,
+    private readonly likesService: LikesService,
+    private readonly kafkaProducerService: KafkaProducerService,
     @InjectRepository(PostEntity)
     private postsRepository: PostsRepository,
   ) {}
@@ -128,6 +131,18 @@ export class PostsService {
     }
 
     const savedPost = await this.postsRepository.save(newPost);
+
+    // 🔥 Send Kafka event
+    await this.kafkaProducerService.produce(
+      {
+        postId: savedPost.id,
+        authorId: savedPost.author.id,
+        text: savedPost.text,
+        timestamp: new Date().toISOString(),
+      },
+      KafkaTopics.PostCreated,
+    );
+
     return savedPost;
   }
 

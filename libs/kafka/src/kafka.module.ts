@@ -6,7 +6,7 @@ import { AppConfigModule } from 'libs/config/src';
 
 @Module({
   imports: [AppConfigModule],
-  providers: [KafkaConsumerService, KafkaProducerService],
-  exports: [KafkaConsumerService, KafkaProducerService],
+  providers: [KafkaService, KafkaConsumerService, KafkaProducerService],
+  exports: [KafkaService, KafkaConsumerService, KafkaProducerService],
 })
 export class KafkaModule {}

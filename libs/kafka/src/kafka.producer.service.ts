@@ -1,6 +1,7 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { KafkaProducer } from './producer.service';
 import { AppConfigService } from 'libs/config/src';
+import { KafkaTopic } from './kafka.config';
 
 export interface IProducer {
   connect: () => Promise<void>;
@@ -10,16 +11,16 @@ export interface IProducer {
 
 @Injectable()
 export class KafkaProducerService implements OnApplicationShutdown {
-  private readonly producers = new Map<string, IProducer>();
+  private readonly producers = new Map<KafkaTopic, IProducer>();
 
   constructor(private readonly configService: AppConfigService) {}
 
-  async produce(message: any) {
-    const topic = this.configService.kafka.topic;
-    const producer = await this.getProducer(topic!);
+  async produce(message: any, topic: KafkaTopic): Promise<void> {
+    const producer = await this.getProducer(topic);
     await producer.produce(message);
   }
-  private async getProducer(topic: string) {
+
+  private async getProducer(topic: KafkaTopic): Promise<IProducer> {
     let producer = this.producers.get(topic);
     if (!producer) {
       producer = new KafkaProducer(topic, this.configService.kafka.broker);
@@ -28,5 +29,10 @@ export class KafkaProducerService implements OnApplicationShutdown {
     }
     return producer;
   }
-  onApplicationShutdown() {}
+
+  async onApplicationShutdown() {
+    for (const producer of this.producers.values()) {
+      await producer.disconnect();
+    }
+  }
 }

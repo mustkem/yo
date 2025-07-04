@@ -6,9 +6,6 @@ async function bootstrap() {
     NotificationsServiceModule,
   );
 
-  // Optional: grab the service and start listening to events or Kafka consumers, etc.
-  const notificationsService = appContext.get('NotificationsService');
-
   // If you have any `onModuleInit()` logic in your services, it will be triggered automatically.
 
   // Keep the process running

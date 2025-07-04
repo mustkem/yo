@@ -1,7 +1,14 @@
-import { Consumer, ConsumerConfig, ConsumerSubscribeTopic, Kafka, KafkaMessage, Producer } from "kafkajs";
-import { IProducer } from "./kafka.producer.service";
-import { Logger } from "@nestjs/common";
-import { IConsumer } from "./kafka.consumer.service";
+import {
+  Consumer,
+  ConsumerConfig,
+  ConsumerSubscribeTopic,
+  Kafka,
+  KafkaMessage,
+  Producer,
+} from 'kafkajs';
+import { IProducer } from './kafka.producer.service';
+import { Logger } from '@nestjs/common';
+import { IConsumer } from './kafka.consumer.service';
 import * as retry from 'async-retry';
 
 export const sleep = (timeout: number) => {
@@ -16,15 +23,16 @@ export class KafkaConsumer implements IConsumer {
   constructor(
     private readonly topic: ConsumerSubscribeTopic,
     config: ConsumerConfig,
-    broker: string) {
+    broker: string,
+  ) {
     this.kafka = new Kafka({
-      brokers: [broker]
-    })
+      brokers: [broker],
+    });
     this.consumer = this.kafka.consumer(config);
-    this.logger = new Logger(`${topic}-${config.groupId}`)
+    this.logger = new Logger(`${topic}-${config.groupId}`);
   }
   async consume(onMessage: (message: KafkaMessage) => Promise<void>) {
-    await this.consumer.subscribe(this.topic)
+    await this.consumer.subscribe(this.topic);
     await this.consumer.run({
       eachMessage: async ({ message, partition }) => {
         this.logger.debug(`Processing message partition: ${partition}`);
@@ -38,12 +46,12 @@ export class KafkaConsumer implements IConsumer {
               ),
           });
         } catch (err) {
-          // handle failure of message 
-          // write then to DB table or log them 
-          // better write to DATABASE 
+          // handle failure of message
+          // write then to DB table or log them
+          // better write to DATABASE
         }
       },
-    })
+    });
   }
 
   async connect() {
@@ -54,9 +62,8 @@ export class KafkaConsumer implements IConsumer {
       await sleep(5000);
       await this.connect();
     }
-
   }
   async disconnect() {
-    this.consumer.disconnect()
+    this.consumer.disconnect();
   }
 }

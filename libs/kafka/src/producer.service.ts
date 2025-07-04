@@ -1,39 +1,38 @@
-import { Kafka, Producer } from "kafkajs";
-import { IProducer } from "./kafka.producer.service";
-import { Logger } from "@nestjs/common";
+import { Kafka, Producer, logLevel } from 'kafkajs';
 
-export const sleep = (timeout: number) => {
-  return new Promise<void>((resolve) => setTimeout(resolve, timeout));
-};
-
-export class KafkaProducer implements IProducer {
-  private readonly kafka: Kafka;
+export class KafkaProducer {
   private readonly producer: Producer;
-  private readonly logger: Logger;
+  private readonly kafka: Kafka;
 
-  constructor(private readonly topic: string, broker: string) {
+  constructor(
+    private readonly topic: string,
+    private readonly broker: string,
+  ) {
     this.kafka = new Kafka({
-      brokers: [broker]
-    })
+      clientId: 'nestjs-app-producer',
+      brokers: [broker],
+      logLevel: logLevel.ERROR,
+    });
+
     this.producer = this.kafka.producer();
-    this.logger = new Logger(topic)
   }
 
   async connect() {
-    try {
-      await this.producer.connect();
-    } catch (err) {
-      this.logger.error('Failed to connect to Kafka. trying again ...', err);
-      await sleep(5000);
-      await this.connect();
-    }
-
+    await this.producer.connect();
   }
+
   async disconnect() {
-    this.producer.disconnect()
-  }
-  async produce(message: any) {
-    await this.producer.send({ topic: this.topic, messages: [message] })
+    await this.producer.disconnect();
   }
 
+  async produce(message: any) {
+    await this.producer.send({
+      topic: this.topic,
+      messages: [
+        {
+          value: JSON.stringify(message),
+        },
+      ],
+    });
+  }
 }

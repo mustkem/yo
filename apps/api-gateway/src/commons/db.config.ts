@@ -32,7 +32,7 @@ export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
     username: configService.get<string>('DB_USER'),
     password: configService.get<string>('DB_PASSWORD'),
     database: configService.get<string>('DB_DATABASE_NAME'),
-    synchronize: false,
+    synchronize: true,
     logger: 'advanced-console',
     logging: 'all',
     namingStrategy: new SnakeNamingStrategy(),
