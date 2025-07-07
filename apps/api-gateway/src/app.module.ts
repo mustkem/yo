@@ -3,16 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './commons/db.module';
 import { ApiModule } from './api.module';
-import { ConfigModule } from '@nestjs/config';
+import { AppConfigModule } from 'libs/config/src';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    DatabaseModule,
-    ApiModule,
-  ],
+  imports: [AppConfigModule, DatabaseModule, ApiModule],
   controllers: [AppController],
   providers: [AppService],
 })

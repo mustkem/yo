@@ -10,10 +10,14 @@ import { UserFollowingEntity } from './user-followings.entity';
 import { UserEntity } from './users.entity';
 import { UsersRepository } from './users.repository';
 import { AuthService } from '../auth/auth.service';
+import { s3Client } from '../aws/s3.config';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Service } from '../aws/s3.service';
 
 @Injectable()
 export class UsersService {
   constructor(
+    private readonly s3Service: S3Service,
     @InjectRepository(UserEntity) private userRepo: UsersRepository,
     private authService: AuthService,
     @InjectRepository(UserFollowingEntity)
@@ -31,8 +35,15 @@ export class UsersService {
    * @description find a user with a given userid
    * @returns {Promise<UserEntity>} user if found
    */
-  public async getUserByUserId(userId: string): Promise<UserEntity> {
-    return await this.userRepo.findOne({ where: { id: userId } });
+  public async getUserByUserId(userId: string): Promise<any> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+
+    if (user?.avatarKey) {
+      const avatarUrl = await this.s3Service.getViewUrl(user.avatarKey);
+      return { ...user, avatarUrl };
+    }
+
+    return user;
   }
 
   /**
@@ -82,8 +93,40 @@ export class UsersService {
     if (newUserDetails.bio) existingUser.bio = newUserDetails.bio;
     if (newUserDetails.avatar) existingUser.avatar = newUserDetails.avatar;
     if (newUserDetails.name) existingUser.name = newUserDetails.name;
+    if (newUserDetails.avatarKey !== undefined) {
+      existingUser.avatarKey = newUserDetails.avatarKey;
+    }
 
     return await this.userRepo.save(existingUser);
+  }
+
+  /*
+  Upload User Avatar
+  */
+  // Depriciated // check controller for creating signed URL to upload the image and read it
+  async uploadUserAvatar(userId: string, file: Express.Multer.File) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    console.log('test', file);
+
+    const fileExt = file.originalname.split('.').pop();
+    const key = `avatars/${userId}-${Date.now()}.${fileExt}`;
+
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      }),
+    );
+
+    const url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.amazonaws.com/${key}`;
+    user.avatar = url;
+
+    await this.userRepo.save(user);
+    return { avatar: url };
   }
 
   /**

@@ -14,6 +14,9 @@ export class MockUsersRepository extends Repository<UserEntity> {
       username: 'johndoe',
       verified: true,
       userPassword: new PasswordEntity(),
+      avatarKey: '',
+      avatar: '',
+      bio: '',
     };
     return mockUser;
   }

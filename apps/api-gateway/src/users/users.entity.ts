@@ -13,6 +13,9 @@ export class UserEntity extends YooBaseEntity {
   @Column({ nullable: true })
   avatar?: string;
 
+  @Column({ nullable: true })
+  avatarKey: string;
+
   @Column({ nullable: true, length: 240 })
   bio?: string;
 

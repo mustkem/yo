@@ -3,7 +3,12 @@ import {
   Delete,
   ForbiddenException,
   NotFoundException,
+  ParseUUIDPipe,
+  Query,
+  UnauthorizedException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Controller, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import {
@@ -17,6 +22,9 @@ import { UserEntity } from './users.entity';
 import { UsersService } from './users.service';
 import { RequiredAuthGuard } from '../auth/auth.guard';
 import { User } from '../auth/auth.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CurrentUser } from '../commons/decorators/current-user.decorator';
+import { S3Service } from '../aws/s3.service';
 
 class UserCreateRequestBody {
   @ApiProperty() username: string;
@@ -36,7 +44,10 @@ class UserUpdateRequestBody {
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private userService: UsersService) {}
+  constructor(
+    private userService: UsersService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @Get('/@:username')
   async getUserByUsername(@Param('username') username: string): Promise<any> {
@@ -124,5 +135,30 @@ export class UsersController {
   @Put('/:userid/followees')
   async getFolloweesOfUser(): Promise<UserEntity[]> {
     return [];
+  }
+
+  @UseGuards(RequiredAuthGuard)
+  @Get(':id/avatar-upload-url')
+  async getPresignedAvatarUploadUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('type') type: string,
+    @CurrentUser() user: UserEntity,
+  ) {
+    if (user.id !== id) {
+      throw new UnauthorizedException('Cannot upload for another user');
+    }
+
+    const timestamp = Date.now();
+    const extension = type.split('/')[1];
+    const key = `avatars/${id}-${timestamp}.${extension}`;
+    const url = await this.s3Service.getUploadUrl(key, type);
+
+    // ✅ Save avatarKey to user record
+    await this.userService.updateUser(user.id, { avatarKey: key });
+
+    return {
+      uploadUrl: url,
+      key,
+    };
   }
 }
