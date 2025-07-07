@@ -37,4 +37,7 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Infra binary
+.terraform/
+
 

@@ -5,12 +5,10 @@ import { config } from 'dotenv';
 
 import { UserEntity } from '../apps/api-gateway/src/users/users.entity';
 import { PasswordEntity } from '../apps/api-gateway/src/auth/passwords.entity';
+import { PostEntity } from '../apps/api-gateway/src/posts/posts.entity';
+import { LikesEntity } from '../apps/api-gateway/src/likes/likes.entity';
 
-/*
-Data seeder for local env never seed on production
-*/
-
-config(); // Load environment variables from .env
+config(); // Load .env
 
 const AppDataSource = new DataSource({
   type: 'mysql',
@@ -21,7 +19,7 @@ const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE_NAME,
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: true,
-  entities: [UserEntity, PasswordEntity],
+  entities: [UserEntity, PasswordEntity, PostEntity, LikesEntity],
 });
 
 async function seed() {
@@ -31,27 +29,60 @@ async function seed() {
 
     const userRepo = AppDataSource.getRepository(UserEntity);
     const passwordRepo = AppDataSource.getRepository(PasswordEntity);
+    const postRepo = AppDataSource.getRepository(PostEntity);
+    const likesRepo = AppDataSource.getRepository(LikesEntity);
 
-    // Step 1: Create user
-    const user = userRepo.create({
-      username: 'testuser',
-      name: 'Test User',
-      bio: 'Welcome to Yo',
-      avatar: null,
-      verified: true,
-    });
+    const users: UserEntity[] = [];
+    const posts: PostEntity[] = [];
 
-    const savedUser = await userRepo.save(user);
+    // 🔹 Step 1: Create 5 users and their passwords
+    for (let i = 1; i <= 5; i++) {
+      const user = userRepo.create({
+        username: `user${i}`,
+        name: `User ${i}`,
+        bio: `Bio for user ${i}`,
+        avatar: null,
+        verified: true,
+      });
 
-    // Step 2: Create password entry
-    const password = passwordRepo.create({
-      userId: savedUser.id,
-      password: await bcrypt.hash('admin123', 10),
-    });
+      const savedUser = await userRepo.save(user);
+      users.push(savedUser);
 
-    await passwordRepo.save(password);
+      const password = passwordRepo.create({
+        userId: savedUser.id,
+        password: await bcrypt.hash('password123', 10),
+      });
+      await passwordRepo.save(password);
+    }
 
-    console.log('✅ Seed complete.  User created.');
+    // 🔹 Step 2: Each user creates 1 post
+    for (const user of users) {
+      const post = postRepo.create({
+        text: `Hello from ${user.username}`,
+        images: [],
+        hashtags: [],
+        mentions: [],
+        links: [],
+        author: user,
+      });
+      const savedPost = await postRepo.save(post);
+      posts.push(savedPost);
+    }
+
+    // 🔹 Step 3: Each user likes every other user's post
+    for (const liker of users) {
+      for (const post of posts) {
+        if (post.author.id !== liker.id) {
+          const like = likesRepo.create({
+            user: liker,
+            post: post,
+          });
+          await likesRepo.save(like);
+        }
+      }
+    }
+
+    console.log('✅ Seed complete. 5 users, 5 posts, mutual likes created.');
     await AppDataSource.destroy();
   } catch (err) {
     console.error('❌ Error during seed:', err);

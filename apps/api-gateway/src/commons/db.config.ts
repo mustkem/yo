@@ -37,6 +37,5 @@ export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
     logging: 'all',
     namingStrategy: new SnakeNamingStrategy(),
     entities: entities,
-    migrations: ['src/database/migrations/*.ts'], // you can remove `cli` — it's deprecated
   }),
 };
