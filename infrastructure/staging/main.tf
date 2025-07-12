@@ -3,9 +3,9 @@ provider "aws" {
 }
 
 resource "aws_instance" "staging_server" {
-  ami           = "ami-0f58b397bc5c1f2e8" # Amazon Linux 2023
+  ami           = "ami-0c101f26f147fa7fd" # Amazon Linux 2023 for us-east-1
   instance_type = "t3.medium"
-  key_name      = "your-key-name" # must exist in AWS
+  key_name      = "yo-staging-key" # must exist in AWS
 
   tags = {
     Name = "staging-ec2"
