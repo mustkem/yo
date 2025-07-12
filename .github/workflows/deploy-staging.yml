@@ -1,28 +1,50 @@
-name: Deploy to Staging
+name: Deploy Staging Infrastructure
 
 on:
   push:
+    branches:
+      - develop
+  pull_request:
     branches:
       - develop
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: write # optional, only needed if you comment on PRs
 
 jobs:
-  deploy:
-    name: Deploy to AWS Staging
+  terraform:
+    name: Terraform Plan & Apply
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/staging
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Configure AWS Credentials via OIDC And this workflow directly connects to AWS via GitHub OIDC and runs Terraform to create or update the cloud resources.
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
+      - name: Setup Terraform // Get access to AWS account
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan
+
+      - name: Terraform Apply (only on push to develop)
+        if: github.event_name == 'push'
+        run: terraform apply -auto-approve
