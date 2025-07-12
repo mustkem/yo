@@ -1,23 +1,14 @@
 provider "aws" {
-  region = "us-east-1" # or your desired region
-}
-
-resource "aws_instance" "staging_server" {
-  ami           = "ami-0c101f26f147fa7fd" # Amazon Linux 2023 for us-east-1
-  instance_type = "t3.medium"
-  key_name      = "yo-staging-key" # must exist in AWS
-
-  tags = {
-    Name = "staging-ec2"
-  }
-
-  vpc_security_group_ids = [aws_security_group.staging_sg.id]
+  region = var.aws_region
 }
 
 resource "aws_security_group" "staging_sg" {
-  name        = "staging-sg"
+  name        = var.security_group_name
+  description = "Security group for staging EC2 instance"
+  vpc_id      = var.vpc_id
 
   ingress {
+    description = "Allow all inbound traffic (for dev only)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -25,9 +16,29 @@ resource "aws_security_group" "staging_sg" {
   }
 
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = var.security_group_name
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_instance" "staging_server" {
+  ami                         = var.ami_id
+  instance_type               = var.instance_type
+  key_name                    = var.key_name
+  vpc_security_group_ids      = [aws_security_group.staging_sg.id]
+
+  tags = {
+    Name        = "staging-ec2"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
   }
 }
