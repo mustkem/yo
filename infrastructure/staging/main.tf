@@ -8,15 +8,13 @@ resource "aws_security_group" "staging_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Allow all inbound traffic (for dev only)"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -24,17 +22,18 @@ resource "aws_security_group" "staging_sg" {
   }
 
   tags = {
-    Name        = var.security_group_name
+    Name = "staging-sg"
     Environment = "staging"
     ManagedBy   = "Terraform"
   }
 }
 
 resource "aws_instance" "staging_server" {
-  ami                         = var.ami_id
-  instance_type               = var.instance_type
-  key_name                    = var.key_name
-  vpc_security_group_ids      = [aws_security_group.staging_sg.id]
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.staging_sg.id]
+  subnet_id              = var.subnet_id
 
   tags = {
     Name        = "staging-ec2"

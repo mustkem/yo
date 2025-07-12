@@ -1,26 +1,34 @@
 variable "aws_region" {
-  default = "us-east-1"
+  description = "AWS region"
+  type        = string
 }
 
 variable "ami_id" {
-  description = "AMI ID for EC2"
-  default     = "ami-0c101f26f147fa7fd" # Amazon Linux 2023 (us-east-1)
+  description = "AMI ID"
+  type        = string
 }
 
 variable "instance_type" {
-  default = "t3.medium"
+  description = "EC2 instance type"
+  type        = string
 }
 
 variable "key_name" {
   description = "EC2 key pair name"
-  default     = "yo-staging-key"
+  type        = string
 }
 
 variable "vpc_id" {
-  description = "VPC where EC2 will be launched"
+  description = "VPC ID"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "Subnet ID"
   type        = string
 }
 
 variable "security_group_name" {
-  default = "staging-sg"
+  description = "Name of the security group"
+  type        = string
 }
