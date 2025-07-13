@@ -256,4 +256,40 @@ resource "aws_instance" "staging_server" {
     Environment = "staging"
     ManagedBy   = "Terraform"
   }
+
+  lifecycle {
+    ignore_changes = [associate_public_ip_address]
+  }
+}
+
+# -------------------------
+# ELASTIC IP
+# -------------------------
+resource "aws_eip" "staging_eip" {
+  vpc      = true
+  tags = {
+    Name        = "staging-eip"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_eip_association" "staging_eip_assoc" {
+  instance_id   = aws_instance.staging_server.id
+  allocation_id = aws_eip.staging_eip.id
+}
+
+# -------------------------
+# OUTPUTS
+# -------------------------
+output "instance_id" {
+  value = aws_instance.staging_server.id
+}
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.nestjs_app.repository_url
+}
+
+output "public_ip" {
+  value = aws_eip.staging_eip.public_ip
 }
