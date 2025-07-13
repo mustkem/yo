@@ -1,3 +1,6 @@
+# -------------------------
+# TERRAFORM BACKEND CONFIG
+# -------------------------
 terraform {
   backend "s3" {
     bucket         = "yo-terraform-state"
@@ -8,6 +11,9 @@ terraform {
   }
 }
 
+# -------------------------
+# PROVIDER
+# -------------------------
 provider "aws" {
   region = var.aws_region
 }
@@ -15,11 +21,10 @@ provider "aws" {
 # -------------------------
 # VPC + NETWORKING SETUP
 # -------------------------
-
 # Create a new VPC
 resource "aws_vpc" "staging_vpc" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_support = true
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
@@ -83,9 +88,26 @@ resource "aws_security_group" "staging_sg" {
   description = "Security group for staging EC2 instance"
   vpc_id      = aws_vpc.staging_vpc.id
 
+  # Allow SSH (change 0.0.0.0/0 to office IP in production)
   ingress {
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow HTTP
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow HTTPS
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -105,25 +127,39 @@ resource "aws_security_group" "staging_sg" {
 }
 
 # -------------------------
-# ECR REPOSITORY
+# NETWORK ACL (NACL)
 # -------------------------
-resource "aws_ecr_repository" "nestjs_app" {
-  name                 = "nestjs-app"
-  image_tag_mutability = "MUTABLE"
-
-  encryption_configuration {
-    encryption_type = "AES256"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
+resource "aws_network_acl" "staging_acl" {
+  vpc_id     = aws_vpc.staging_vpc.id
+  subnet_ids = [aws_subnet.staging_subnet.id]
 
   tags = {
-    Name        = "nestjs-app"
+    Name        = "staging-acl"
     Environment = "staging"
     ManagedBy   = "Terraform"
   }
+}
+
+resource "aws_network_acl_rule" "inbound_allow_all" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 100
+  egress         = false
+  protocol       = "-1"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 0
+  to_port        = 0
+}
+
+resource "aws_network_acl_rule" "outbound_allow_all" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 101
+  egress         = true
+  protocol       = "-1"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 0
+  to_port        = 0
 }
 
 # -------------------------
@@ -160,41 +196,25 @@ resource "aws_iam_instance_profile" "ec2_ecr_profile" {
 }
 
 # -------------------------
-# NETWORK ACL (NACL)
+# ECR REPOSITORY
 # -------------------------
-resource "aws_network_acl" "staging_acl" {
-  vpc_id = aws_vpc.staging_vpc.id
-  subnet_ids = [aws_subnet.staging_subnet.id]
+resource "aws_ecr_repository" "nestjs_app" {
+  name                 = "nestjs-app"
+  image_tag_mutability = "MUTABLE"
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   tags = {
-    Name        = "staging-acl"
+    Name        = "nestjs-app"
     Environment = "staging"
     ManagedBy   = "Terraform"
   }
-}
-
-# Allow All Inbound
-resource "aws_network_acl_rule" "inbound_allow_all" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 100
-  egress         = false
-  protocol       = "-1"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 0
-  to_port        = 0
-}
-
-# Allow All Outbound
-resource "aws_network_acl_rule" "outbound_allow_all" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 101
-  egress         = true
-  protocol       = "-1"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 0
-  to_port        = 0
 }
 
 # -------------------------
@@ -206,7 +226,6 @@ resource "aws_instance" "staging_server" {
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.staging_sg.id]
   subnet_id              = aws_subnet.staging_subnet.id
-  associate_public_ip_address = true
   user_data              = file("${path.module}/user_data.sh")
   iam_instance_profile   = aws_iam_instance_profile.ec2_ecr_profile.name
 
@@ -215,4 +234,19 @@ resource "aws_instance" "staging_server" {
     Environment = "staging"
     ManagedBy   = "Terraform"
   }
+}
+
+# -------------------------
+# OUTPUTS
+# -------------------------
+output "public_ip" {
+  value = aws_instance.staging_server.public_ip
+}
+
+output "instance_id" {
+  value = aws_instance.staging_server.id
+}
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.nestjs_app.repository_url
 }
