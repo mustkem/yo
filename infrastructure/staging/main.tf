@@ -42,6 +42,44 @@ resource "aws_security_group" "staging_sg" {
 }
 
 # -------------------------
+# NETWORK ACL (Allow All)
+# -------------------------
+resource "aws_network_acl" "staging_acl" {
+  vpc_id = var.vpc_id
+  subnet_ids = [var.subnet_id]
+
+  tags = {
+    Name        = "staging-acl"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Allow All Inbound
+resource "aws_network_acl_rule" "inbound_allow_all" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 100
+  egress         = false
+  protocol       = "-1"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 0
+  to_port        = 0
+}
+
+# Allow All Outbound
+resource "aws_network_acl_rule" "outbound_allow_all" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 100
+  egress         = true
+  protocol       = "-1"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 0
+  to_port        = 0
+}
+
+# -------------------------
 # ECR REPOSITORY
 # -------------------------
 resource "aws_ecr_repository" "nestjs_app" {
@@ -94,55 +132,6 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 resource "aws_iam_instance_profile" "ec2_ecr_profile" {
   name = "ec2-ecr-profile"
   role = aws_iam_role.ec2_ecr_role.name
-}
-
-# -------------------------
-# NETWORK ACL (Allow-only)
-# -------------------------
-resource "aws_network_acl" "staging_acl" {
-  vpc_id = var.vpc_id
-
-  subnet_ids = [var.subnet_id]
-
-  tags = {
-    Name        = "staging-acl"
-    Environment = "staging"
-    ManagedBy   = "Terraform"
-  }
-}
-
-# Allow Inbound SSH (port 22)
-resource "aws_network_acl_rule" "inbound_ssh" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 100
-  egress         = false
-  protocol       = "6"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 22
-  to_port        = 22
-}
-
-# Allow Inbound ephemeral ports (1024-65535) for return traffic
-resource "aws_network_acl_rule" "inbound_ephemeral" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 110
-  egress         = false
-  protocol       = "6"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 1024
-  to_port        = 65535
-}
-
-# Allow Outbound all traffic
-resource "aws_network_acl_rule" "outbound_all" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 100
-  egress         = true
-  protocol       = "-1"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
 }
 
 # -------------------------
