@@ -97,6 +97,55 @@ resource "aws_iam_instance_profile" "ec2_ecr_profile" {
 }
 
 # -------------------------
+# NETWORK ACL (Allow-only)
+# -------------------------
+resource "aws_network_acl" "staging_acl" {
+  vpc_id = var.vpc_id
+
+  subnet_ids = [var.subnet_id]
+
+  tags = {
+    Name        = "staging-acl"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Allow Inbound SSH (port 22)
+resource "aws_network_acl_rule" "inbound_ssh" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 100
+  egress         = false
+  protocol       = "6"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 22
+  to_port        = 22
+}
+
+# Allow Inbound ephemeral ports (1024-65535) for return traffic
+resource "aws_network_acl_rule" "inbound_ephemeral" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 110
+  egress         = false
+  protocol       = "6"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 1024
+  to_port        = 65535
+}
+
+# Allow Outbound all traffic
+resource "aws_network_acl_rule" "outbound_all" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 100
+  egress         = true
+  protocol       = "-1"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+}
+
+# -------------------------
 # EC2 INSTANCE
 # -------------------------
 resource "aws_instance" "staging_server" {
@@ -113,49 +162,4 @@ resource "aws_instance" "staging_server" {
     Environment = "staging"
     ManagedBy   = "Terraform"
   }
-}
-
-# -------------------------
-# NETWORK ACL (NACL) to allow SSH & outbound
-# -------------------------
-resource "aws_network_acl" "staging_acl" {
-  vpc_id = var.vpc_id
-  subnet_ids = [var.subnet_id]
-
-  tags = {
-    Name        = "staging-acl"
-    Environment = "staging"
-    ManagedBy   = "Terraform"
-  }
-}
-
-resource "aws_network_acl_rule" "inbound_ssh" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 100
-  egress         = false
-  protocol       = "tcp"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 22
-  to_port        = 22
-}
-
-resource "aws_network_acl_rule" "inbound_ephemeral" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 110
-  egress         = false
-  protocol       = "tcp"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 1024
-  to_port        = 65535
-}
-
-resource "aws_network_acl_rule" "outbound_all" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 100
-  egress         = true
-  protocol       = "-1"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
 }
