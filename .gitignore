@@ -39,5 +39,8 @@ lerna-debug.log*
 
 # Infra binary
 .terraform/
-
+*.tfstate
+*.tfstate.backup
+terraform.tfvars
+.terraform*.lock.*
 
