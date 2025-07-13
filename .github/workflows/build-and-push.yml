@@ -17,9 +17,6 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}
 
     steps:
       - name: Checkout code
@@ -43,6 +40,7 @@ jobs:
       - name: Build Docker image with production build
         run: |
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+        working-directory: ${{ github.workspace }}
 
       - name: Tag Docker image for ECR
         run: |
