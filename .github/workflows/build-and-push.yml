@@ -40,7 +40,7 @@ jobs:
       - name: Build Docker image with production build
         run: |
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-        working-directory: ${{ github.workspace }}
+        working-directory: ./
 
       - name: Tag Docker image for ECR
         run: |
