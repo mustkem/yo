@@ -162,6 +162,28 @@ resource "aws_network_acl_rule" "outbound_allow_all" {
   to_port        = 0
 }
 
+resource "aws_network_acl_rule" "inbound_ephemeral" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 102
+  egress         = false
+  protocol       = "6"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 1024
+  to_port        = 65535
+}
+
+resource "aws_network_acl_rule" "outbound_ssh" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 103
+  egress         = true
+  protocol       = "6"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 22
+  to_port        = 22
+}
+
 # -------------------------
 # IAM ROLE for EC2 + ECR Access
 # -------------------------
@@ -235,4 +257,3 @@ resource "aws_instance" "staging_server" {
     ManagedBy   = "Terraform"
   }
 }
-
