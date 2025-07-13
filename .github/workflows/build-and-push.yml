@@ -43,7 +43,11 @@ jobs:
 
       - name: Build Docker image
         run: |
+          echo "Working directory:"
+          pwd
+          ls -al
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+        working-directory: ${{ github.workspace }}
 
       - name: Tag Docker image
         run: |
