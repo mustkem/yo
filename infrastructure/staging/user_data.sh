@@ -8,14 +8,14 @@ echo "======== 🚀 Starting EC2 user_data.sh setup ========"
 
 # Update and install Docker
 echo "➡️ Updating system..."
-yum update -y
+dnf update -y
 
 echo "➡️ Installing Docker..."
-amazon-linux-extras install docker -y
+dnf install docker -y
 
 echo "✅ Docker installed"
 echo "➡️ Starting Docker service..."
-service docker start
+systemctl start docker
 
 echo "➡️ Adding ec2-user to docker group..."
 usermod -a -G docker ec2-user
