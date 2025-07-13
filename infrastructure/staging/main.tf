@@ -34,9 +34,29 @@ resource "aws_instance" "staging_server" {
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.staging_sg.id]
   subnet_id              = var.subnet_id
+  user_data              = file("${path.module}/user_data.sh")
 
   tags = {
     Name        = "staging-ec2"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_ecr_repository" "nestjs_app" {
+  name                 = "nestjs-app"
+  image_tag_mutability = "MUTABLE"
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Name        = "nestjs-app"
     Environment = "staging"
     ManagedBy   = "Terraform"
   }
