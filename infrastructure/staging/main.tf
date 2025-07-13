@@ -140,6 +140,7 @@ resource "aws_network_acl" "staging_acl" {
   }
 }
 
+# Allow all inbound
 resource "aws_network_acl_rule" "inbound_allow_all" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 100
@@ -151,6 +152,7 @@ resource "aws_network_acl_rule" "inbound_allow_all" {
   to_port        = 0
 }
 
+# Allow all outbound
 resource "aws_network_acl_rule" "outbound_allow_all" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 101
@@ -162,22 +164,24 @@ resource "aws_network_acl_rule" "outbound_allow_all" {
   to_port        = 0
 }
 
+# Allow inbound ephemeral ports (for SSH replies)
 resource "aws_network_acl_rule" "inbound_ephemeral" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 102
   egress         = false
-  protocol       = "6"
+  protocol       = "6" # TCP
   rule_action    = "allow"
   cidr_block     = "0.0.0.0/0"
   from_port      = 1024
   to_port        = 65535
 }
 
+# Allow outbound SSH
 resource "aws_network_acl_rule" "outbound_ssh" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 103
   egress         = true
-  protocol       = "6"
+  protocol       = "6" # TCP
   rule_action    = "allow"
   cidr_block     = "0.0.0.0/0"
   from_port      = 22
@@ -257,16 +261,14 @@ resource "aws_instance" "staging_server" {
     ManagedBy   = "Terraform"
   }
 
-  lifecycle {
+   lifecycle {
     ignore_changes = [associate_public_ip_address]
   }
 }
-
 # -------------------------
 # ELASTIC IP
 # -------------------------
 resource "aws_eip" "staging_eip" {
-  vpc      = true
   tags = {
     Name        = "staging-eip"
     Environment = "staging"
@@ -277,19 +279,4 @@ resource "aws_eip" "staging_eip" {
 resource "aws_eip_association" "staging_eip_assoc" {
   instance_id   = aws_instance.staging_server.id
   allocation_id = aws_eip.staging_eip.id
-}
-
-# -------------------------
-# OUTPUTS
-# -------------------------
-output "instance_id" {
-  value = aws_instance.staging_server.id
-}
-
-output "ecr_repository_url" {
-  value = aws_ecr_repository.nestjs_app.repository_url
-}
-
-output "public_ip" {
-  value = aws_eip.staging_eip.public_ip
 }
