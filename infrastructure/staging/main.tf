@@ -1,6 +1,18 @@
+
+terraform {
+  backend "s3" {
+    bucket         = "yo-terraform-state"
+    key            = "staging/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "yo-terraform-locks"
+    encrypt        = true
+  }
+}
+
 provider "aws" {
   region = var.aws_region
 }
+
 
 resource "aws_security_group" "staging_sg" {
   name        = var.security_group_name
