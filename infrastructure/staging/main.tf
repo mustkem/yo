@@ -13,12 +13,75 @@ provider "aws" {
 }
 
 # -------------------------
+# VPC + NETWORKING SETUP
+# -------------------------
+
+# Create a new VPC
+resource "aws_vpc" "staging_vpc" {
+  cidr_block = "10.0.0.0/16"
+  enable_dns_support = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name        = "staging-vpc"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Create Internet Gateway
+resource "aws_internet_gateway" "staging_igw" {
+  vpc_id = aws_vpc.staging_vpc.id
+
+  tags = {
+    Name        = "staging-igw"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Create a public subnet
+resource "aws_subnet" "staging_subnet" {
+  vpc_id                  = aws_vpc.staging_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name        = "staging-subnet"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Create a route table with default route to IGW
+resource "aws_route_table" "staging_rt" {
+  vpc_id = aws_vpc.staging_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.staging_igw.id
+  }
+
+  tags = {
+    Name        = "staging-rt"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Associate route table with subnet
+resource "aws_route_table_association" "staging_rt_assoc" {
+  subnet_id      = aws_subnet.staging_subnet.id
+  route_table_id = aws_route_table.staging_rt.id
+}
+
+# -------------------------
 # SECURITY GROUP
 # -------------------------
 resource "aws_security_group" "staging_sg" {
   name        = var.security_group_name
   description = "Security group for staging EC2 instance"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.staging_vpc.id
 
   ingress {
     from_port   = 22
@@ -100,8 +163,8 @@ resource "aws_iam_instance_profile" "ec2_ecr_profile" {
 # NETWORK ACL (NACL)
 # -------------------------
 resource "aws_network_acl" "staging_acl" {
-  vpc_id = var.vpc_id
-  subnet_ids = [var.subnet_id]
+  vpc_id = aws_vpc.staging_vpc.id
+  subnet_ids = [aws_subnet.staging_subnet.id]
 
   tags = {
     Name        = "staging-acl"
@@ -122,7 +185,7 @@ resource "aws_network_acl_rule" "inbound_allow_all" {
   to_port        = 0
 }
 
-# Allow All Outbound (different rule_number to avoid conflicts)
+# Allow All Outbound
 resource "aws_network_acl_rule" "outbound_allow_all" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 101
@@ -142,7 +205,8 @@ resource "aws_instance" "staging_server" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.staging_sg.id]
-  subnet_id              = var.subnet_id
+  subnet_id              = aws_subnet.staging_subnet.id
+  associate_public_ip_address = true
   user_data              = file("${path.module}/user_data.sh")
   iam_instance_profile   = aws_iam_instance_profile.ec2_ecr_profile.name
 
