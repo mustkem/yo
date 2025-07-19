@@ -1,0 +1,20 @@
+name: Test SSH to EC2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-ssh-connection:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test SSH Connection
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: echo "Connection successful"
