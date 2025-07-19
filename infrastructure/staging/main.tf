@@ -133,103 +133,15 @@ resource "aws_network_acl" "staging_acl" {
   }
 }
 
-resource "aws_network_acl_rule" "inbound_ssh" {
+resource "aws_network_acl_rule" "allow_all_inbound" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 100
   egress         = false
-  protocol       = "6" # TCP
+  protocol       = "-1"         # All protocols
   rule_action    = "allow"
-  cidr_block     = local.my_ip
-  from_port      = 22
-  to_port        = 22
-}
-
-resource "aws_network_acl_rule" "inbound_http" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 101
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 80
-  to_port        = 80
-}
-
-resource "aws_network_acl_rule" "inbound_https" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 102
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 443
-  to_port        = 443
-}
-
-resource "aws_network_acl_rule" "inbound_nestjs" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 103
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0" # Restrict in production
-  from_port      = 3000
-  to_port        = 3000
-}
-
-resource "aws_network_acl_rule" "inbound_mysql" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 104
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "10.0.1.0/24"
-  from_port      = 3306
-  to_port        = 3306
-}
-
-resource "aws_network_acl_rule" "inbound_redis" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 105
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "10.0.1.0/24"
-  from_port      = 6379
-  to_port        = 6379
-}
-
-resource "aws_network_acl_rule" "inbound_kafka" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 106
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "10.0.1.0/24"
-  from_port      = 9092
-  to_port        = 9092
-}
-
-resource "aws_network_acl_rule" "inbound_redpanda" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 107
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0" # Restrict in production
-  from_port      = 8080
-  to_port        = 8080
-}
-
-resource "aws_network_acl_rule" "inbound_ephemeral" {
-  network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 108
-  egress         = false
-  protocol       = "6" # TCP
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 1024
-  to_port        = 65535
+  cidr_block     = "0.0.0.0/0"  # From anywhere
+  from_port      = 0
+  to_port        = 0
 }
 
 resource "aws_network_acl_rule" "outbound_all" {
