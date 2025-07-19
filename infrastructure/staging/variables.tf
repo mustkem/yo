@@ -32,3 +32,16 @@ variable "security_group_name" {
   description = "Name of the security group"
   type        = string
 }
+
+
+variable "ssh_cidr_block" {
+  description = "Optional CIDR block for SSH access (overrides dynamic IP if set)"
+  type        = string
+  default     = ""
+}
+
+variable "associate_public_ip" {
+  description = "Whether to associate a public IP address with the EC2 instance"
+  type        = bool
+  default     = false
+}

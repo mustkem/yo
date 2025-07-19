@@ -19,9 +19,22 @@ provider "aws" {
 }
 
 # -------------------------
+# DYNAMIC IP FETCH
+# -------------------------
+data "http" "my_ip" {
+  url = "https://httpbin.org/ip"
+  request_headers = {
+    Accept = "application/json"
+  }
+}
+
+locals {
+  my_ip = var.ssh_cidr_block != "" ? var.ssh_cidr_block : "${jsondecode(data.http.my_ip.response_body).origin}/32"
+}
+
+# -------------------------
 # VPC + NETWORKING SETUP
 # -------------------------
-# Create a new VPC
 resource "aws_vpc" "staging_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -34,7 +47,6 @@ resource "aws_vpc" "staging_vpc" {
   }
 }
 
-# Create Internet Gateway
 resource "aws_internet_gateway" "staging_igw" {
   vpc_id = aws_vpc.staging_vpc.id
 
@@ -45,7 +57,6 @@ resource "aws_internet_gateway" "staging_igw" {
   }
 }
 
-# Create a public subnet
 resource "aws_subnet" "staging_subnet" {
   vpc_id                  = aws_vpc.staging_vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -58,7 +69,6 @@ resource "aws_subnet" "staging_subnet" {
   }
 }
 
-# Create a route table with default route to IGW
 resource "aws_route_table" "staging_rt" {
   vpc_id = aws_vpc.staging_vpc.id
 
@@ -74,7 +84,6 @@ resource "aws_route_table" "staging_rt" {
   }
 }
 
-# Associate route table with subnet
 resource "aws_route_table_association" "staging_rt_assoc" {
   subnet_id      = aws_subnet.staging_subnet.id
   route_table_id = aws_route_table.staging_rt.id
@@ -88,12 +97,12 @@ resource "aws_security_group" "staging_sg" {
   description = "Security group for staging EC2 instance"
   vpc_id      = aws_vpc.staging_vpc.id
 
-  # Allow SSH (change 0.0.0.0/0 to office IP in production)
+  # Allow SSH from dynamic IP
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [local.my_ip]
   }
 
   # Allow HTTP
@@ -110,6 +119,46 @@ resource "aws_security_group" "staging_sg" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow NestJS app port
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Restrict in production
+  }
+
+  # Allow MySQL (restrict to VPC)
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.1.0/24"]
+  }
+
+  # Allow Redis (restrict to VPC)
+  ingress {
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.1.0/24"]
+  }
+
+  # Allow Kafka (restrict to VPC)
+  ingress {
+    from_port   = 9092
+    to_port     = 9092
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.1.0/24"]
+  }
+
+  # Allow Redpanda Console
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Restrict in production
   }
 
   egress {
@@ -140,34 +189,97 @@ resource "aws_network_acl" "staging_acl" {
   }
 }
 
-# Allow all inbound
-resource "aws_network_acl_rule" "inbound_allow_all" {
+resource "aws_network_acl_rule" "inbound_ssh" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 100
   egress         = false
-  protocol       = "-1"
+  protocol       = "6" # TCP
   rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 0
-  to_port        = 0
+  cidr_block     = local.my_ip
+  from_port      = 22
+  to_port        = 22
 }
 
-# Allow all outbound
-resource "aws_network_acl_rule" "outbound_allow_all" {
+resource "aws_network_acl_rule" "inbound_http" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 101
-  egress         = true
-  protocol       = "-1"
+  egress         = false
+  protocol       = "6" # TCP
   rule_action    = "allow"
   cidr_block     = "0.0.0.0/0"
-  from_port      = 0
-  to_port        = 0
+  from_port      = 80
+  to_port        = 80
 }
 
-# Allow inbound ephemeral ports (for SSH replies)
-resource "aws_network_acl_rule" "inbound_ephemeral" {
+resource "aws_network_acl_rule" "inbound_https" {
   network_acl_id = aws_network_acl.staging_acl.id
   rule_number    = 102
+  egress         = false
+  protocol       = "6" # TCP
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 443
+  to_port        = 443
+}
+
+resource "aws_network_acl_rule" "inbound_nestjs" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 103
+  egress         = false
+  protocol       = "6" # TCP
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0" # Restrict in production
+  from_port      = 3000
+  to_port        = 3000
+}
+
+resource "aws_network_acl_rule" "inbound_mysql" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 104
+  egress         = false
+  protocol       = "6" # TCP
+  rule_action    = "allow"
+  cidr_block     = "10.0.1.0/24"
+  from_port      = 3306
+  to_port        = 3306
+}
+
+resource "aws_network_acl_rule" "inbound_redis" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 105
+  egress         = false
+  protocol       = "6" # TCP
+  rule_action    = "allow"
+  cidr_block     = "10.0.1.0/24"
+  from_port      = 6379
+  to_port        = 6379
+}
+
+resource "aws_network_acl_rule" "inbound_kafka" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 106
+  egress         = false
+  protocol       = "6" # TCP
+  rule_action    = "allow"
+  cidr_block     = "10.0.1.0/24"
+  from_port      = 9092
+  to_port        = 9092
+}
+
+resource "aws_network_acl_rule" "inbound_redpanda" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 107
+  egress         = false
+  protocol       = "6" # TCP
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0" # Restrict in production
+  from_port      = 8080
+  to_port        = 8080
+}
+
+resource "aws_network_acl_rule" "inbound_ephemeral" {
+  network_acl_id = aws_network_acl.staging_acl.id
+  rule_number    = 108
   egress         = false
   protocol       = "6" # TCP
   rule_action    = "allow"
@@ -176,16 +288,15 @@ resource "aws_network_acl_rule" "inbound_ephemeral" {
   to_port        = 65535
 }
 
-# Allow outbound SSH
-resource "aws_network_acl_rule" "outbound_ssh" {
+resource "aws_network_acl_rule" "outbound_all" {
   network_acl_id = aws_network_acl.staging_acl.id
-  rule_number    = 103
+  rule_number    = 100
   egress         = true
-  protocol       = "6" # TCP
+  protocol       = "-1"
   rule_action    = "allow"
   cidr_block     = "0.0.0.0/0"
-  from_port      = 22
-  to_port        = 22
+  from_port      = 0
+  to_port        = 0
 }
 
 # -------------------------
@@ -254,6 +365,7 @@ resource "aws_instance" "staging_server" {
   subnet_id              = aws_subnet.staging_subnet.id
   user_data              = file("${path.module}/user_data.sh")
   iam_instance_profile   = aws_iam_instance_profile.ec2_ecr_profile.name
+  associate_public_ip_address = var.associate_public_ip
 
   tags = {
     Name        = "staging-ec2"
@@ -261,10 +373,11 @@ resource "aws_instance" "staging_server" {
     ManagedBy   = "Terraform"
   }
 
-   lifecycle {
+  lifecycle {
     ignore_changes = [associate_public_ip_address]
   }
 }
+
 # -------------------------
 # ELASTIC IP
 # -------------------------
