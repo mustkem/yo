@@ -11,23 +11,23 @@ echo "➡️ Updating system..."
 dnf update -y
 
 echo "➡️ Installing Docker..."
-dnf install docker -y
+dnf install -y docker
 
 echo "✅ Docker installed"
 echo "➡️ Starting Docker service..."
 systemctl start docker
 
 echo "➡️ Adding ec2-user to docker group..."
-usermod -a -G docker ec2-user
+usermod -aG docker ec2-user
 
 echo "➡️ Enabling Docker to start on boot..."
 systemctl enable docker
 
 # Install AWS CLI
 echo "➡️ Installing AWS CLI..."
-dnf install aws-cli -y
+dnf install -y aws-cli
 
-# Install Docker Compose
+# Install Docker Compose (v2 plugin binary)
 DOCKER_COMPOSE_VERSION="2.24.6"
 echo "➡️ Installing Docker Compose v$DOCKER_COMPOSE_VERSION..."
 curl -SL "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
@@ -39,16 +39,18 @@ echo "✅ Docker Compose installed"
 APP_DIR="/home/ec2-user/twitter-backend-node"
 echo "➡️ Creating app directory at $APP_DIR"
 mkdir -p $APP_DIR
+chown ec2-user:ec2-user $APP_DIR
 cd $APP_DIR
 
-# Get AWS Account ID and Region for ECR login
+# ECR config
 echo "➡️ Setting up AWS CLI and ECR login..."
 AWS_REGION="us-east-1"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 ECR_REPOSITORY="nestjs-app"
+ECR_IMAGE="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest"
 
 echo "➡️ Logging into Amazon ECR..."
-aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 echo "➡️ Writing docker-compose.yaml"
 cat <<EOF > docker-compose.yaml
@@ -56,7 +58,7 @@ version: '3.8'
 
 services:
   app:
-    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+    image: $ECR_IMAGE
     container_name: nestjs-app
     ports:
       - "3000:3000"
@@ -156,9 +158,13 @@ EOF
 
 echo "✅ docker-compose.yaml written"
 
-# Start the app
-echo "➡️ Starting docker-compose service..."
-docker-compose up -d
+# Pull latest image explicitly (safety net)
+echo "➡️ Pulling latest images..."
+docker-compose pull
+
+# Run as ec2-user to ensure correct permissions
+echo "➡️ Starting docker-compose stack..."
+sudo -u ec2-user -i bash -c "cd $APP_DIR && docker-compose up -d"
 
 echo "✅ Application stack started"
 echo "======== ✅ Finished user_data.sh setup ========"
