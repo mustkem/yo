@@ -97,68 +97,12 @@ resource "aws_security_group" "staging_sg" {
   description = "Security group for staging EC2 instance"
   vpc_id      = aws_vpc.staging_vpc.id
 
-  # Allow SSH from dynamic IP
+  # Allow all inbound traffic from all IPs
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [local.my_ip]
-  }
-
-  # Allow HTTP
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow HTTPS
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow NestJS app port
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restrict in production
-  }
-
-  # Allow MySQL (restrict to VPC)
-  ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.1.0/24"]
-  }
-
-  # Allow Redis (restrict to VPC)
-  ingress {
-    from_port   = 6379
-    to_port     = 6379
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.1.0/24"]
-  }
-
-  # Allow Kafka (restrict to VPC)
-  ingress {
-    from_port   = 9092
-    to_port     = 9092
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.1.0/24"]
-  }
-
-  # Allow Redpanda Console
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restrict in production
   }
 
   egress {
