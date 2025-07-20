@@ -1,34 +1,26 @@
-# Stage 1: Build the NestJS app
+# 1. Base image
 FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# Copy config and dependency files
+# 2. Copy package files and install dependencies
 COPY package*.json ./
 COPY nest-cli.json ./
 COPY tsconfig*.json ./
-
-# Copy source code
 COPY apps ./apps
 COPY libs ./libs
-# ✅ Ensure build/ is available for postinstall
-COPY build ./build       
+
 RUN npm install
 RUN npm run build
 
-# Stage 2: Create production image
-FROM node:20-alpine AS production
+# 3. Create production image
+FROM node:20-alpine
+
 WORKDIR /app
 
-# Copy config and dependency files
-COPY package*.json ./
-# ✅ Copy build/ folder so postinstall works
-COPY build ./build       
-
-# Install only production dependencies
-RUN npm install --omit=dev
-
-# Copy the compiled output from builder
 COPY --from=builder /app/dist ./dist
+COPY package*.json ./
 
-# Run the app (adjust this path if your entrypoint is different)
+RUN npm install --only=production
+
 CMD ["node", "dist/apps/api/main"]
