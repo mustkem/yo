@@ -31,4 +31,4 @@ ENV NODE_ENV=production
 RUN npm install --only=production --ignore-scripts
 
 # Start the server
-CMD ["node", "dist/apps/api/main"]
+CMD ["node", "dist/apps/api-gateway/main"]
