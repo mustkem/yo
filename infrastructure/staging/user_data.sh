@@ -52,8 +52,8 @@ ECR_IMAGE="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:lat
 echo "➡️ Logging into Amazon ECR..."
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
-echo "➡️ Writing docker-compose.yaml"
-cat <<EOF > docker-compose.yaml
+echo "➡️ Writing docker-compose.yml"
+cat <<EOF > docker-compose.yml
 version: '3.8'
 
 services:
