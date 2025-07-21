@@ -233,7 +233,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             export AWS_REGION=${{ env.AWS_REGION }}
-            export SECRET_NAME=${{ secrets.SECRET_NAME }}
+            export AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH=${{ secrets.AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH }}
             export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -242,10 +242,10 @@ jobs:
 
             # Create or overwrite .env file with secrets from AWS Secrets Manager
             aws secretsmanager get-secret-value \
-              --secret-id $SECRET_NAME \
+              --secret-id $AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH \
               --region $AWS_REGION \
               --query SecretString \
               --output text > .env
 
-            docker compose -f docker/docker-compose-prod.yml pull
-            docker compose -f docker/docker-compose-prod.yml up -d --remove-orphans
+            docker-compose -f docker/docker-compose-prod.yml pull
+            docker-compose -f docker/docker-compose-prod.yml up -d --remove-orphans
