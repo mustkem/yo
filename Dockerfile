@@ -23,6 +23,6 @@ COPY --from=builder /app/dist ./dist
 COPY package*.json ./
 
 ENV NODE_ENV=production
-RUN npm install --only=production
+RUN npm install --only=production --ignore-scripts
 
 CMD ["node", "dist/apps/api/main"]
