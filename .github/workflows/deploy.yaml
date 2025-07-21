@@ -196,18 +196,19 @@ jobs:
             REGION="us-east-1"
             ENV_PATH="/home/ec2-user/twitter-backend-node"
 
-            # Ensure directory exists
-            mkdir -p "$ENV_PATH"
-
-            # Set write permission
-            chmod u+w "$ENV_PATH"
+            # Create folder if it doesn't exist
+            sudo mkdir -p "$(dirname "$ENV_PATH")"
 
             # Fetch secrets and create .env file
-            aws secretsmanager get-secret-value \
+            sudo aws secretsmanager get-secret-value \
               --secret-id $SECRET_NAME \
               --region $REGION \
               --query SecretString \
               --output text > /home/ec2-user/twitter-backend-node/.env
+
+            sudo chown ec2-user:ec2-user "$ENV_PATH"
+
+            echo "✅ Secret written to $ENV_PATH"
 
   deploy-to-ec2:
     name: Deploy Docker Image to EC2
