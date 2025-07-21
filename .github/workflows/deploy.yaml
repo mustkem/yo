@@ -56,8 +56,11 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan
-        run: terraform plan -input=false
+      - name: Terraform Plan with Retry
+        run: |
+          for i in {1..5}; do
+            terraform plan -input=false -no-color && break || sleep 10
+          done
 
       - name: Terraform Apply (on push to main)
         if: github.event_name == 'push'
