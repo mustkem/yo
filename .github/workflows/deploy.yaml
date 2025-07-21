@@ -194,6 +194,13 @@ jobs:
           script: |
             SECRET_NAME="prod/nestjs-app/envs"
             REGION="us-east-1"
+            ENV_PATH="/home/ec2-user/twitter-backend-node"
+
+            # Ensure directory exists
+            mkdir -p "$ENV_PATH"
+
+            # Set write permission
+            chmod u+w "$ENV_PATH"
 
             # Fetch secrets and create .env file
             aws secretsmanager get-secret-value \
