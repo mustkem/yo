@@ -9,6 +9,7 @@ COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY apps ./apps
 COPY libs ./libs
+COPY build ./build
 
 RUN npm install
 RUN npm run build
