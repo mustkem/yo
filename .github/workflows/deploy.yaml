@@ -260,7 +260,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             echo "🔍 Verifying uploaded docker-compose file..."
-            ls -la /home/ec2-user/twitter-backend-node/docker/docker-compose-prod.yml
+            ls -la /home/ec2-user/twitter-backend-node/docker-compose-prod.yml
             echo "✅ docker-compose-prod.yml is present"
 
       - name: Deploy to EC2 via SSH
@@ -297,6 +297,6 @@ jobs:
               --output text | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
 
             echo "📦 Pulling and launching containers"
-            docker-compose -f docker/docker-compose-prod.yml pull
-            docker-compose -f docker/docker-compose-prod.yml up -d --remove-orphans
+            docker-compose -f docker-compose-prod.yml pull
+            docker-compose -f docker-compose-prod.yml up -d --remove-orphans
             echo "✅ Deployment complete"
