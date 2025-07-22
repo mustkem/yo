@@ -204,7 +204,7 @@ jobs:
               --secret-id $SECRET_NAME \
               --region $REGION \
               --query SecretString \
-              --output text > /home/ec2-user/twitter-backend-node/.env
+              --output text > /home/ec2-user/twitter-backend-node/docker/.env
 
             sudo chown ec2-user:ec2-user "$ENV_PATH"
 
@@ -238,9 +238,8 @@ jobs:
           host: ${{ secrets.EC2_PUBLIC_IP }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: ./docker/docker-compose-prod.yml
-          target: /home/ec2-user/twitter-backend-node/docker-compose-prod.yml
-          strip_components: 1
+          source: docker/docker-compose-prod.yml
+          target: /home/ec2-user/twitter-backend-node/
 
       - name: Confirm docker-compose file is present on EC2
         uses: appleboy/ssh-action@v1.0.0
@@ -251,7 +250,7 @@ jobs:
           script: |
             echo "🔍 Verifying uploaded docker-compose file..."
             ls -la /home/ec2-user/twitter-backend-node/
-            if [ -f /home/ec2-user/twitter-backend-node/docker-compose-prod.yml ]; then
+            if [ -f /home/ec2-user/twitter-backend-node/docker/docker-compose-prod.yml ]; then
               echo "✅ docker-compose-prod.yml is present"
             else
               echo "❌ docker-compose-prod.yml is missing"
@@ -282,7 +281,7 @@ jobs:
             echo "🔑 Logging in to ECR"
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-            cd /home/ec2-user/twitter-backend-node
+            cd /home/ec2-user/twitter-backend-node/docker
 
             echo "📄 Writing secrets to .env"
             aws secretsmanager get-secret-value \
@@ -292,6 +291,6 @@ jobs:
               --output text | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
 
             echo "📦 Pulling and launching containers"
-            docker-compose -f docker-compose-prod.yml pull
-            docker-compose -f docker-compose-prod.yml up -d --remove-orphans
+            docker-compose -f docker/docker-compose-prod.yml pull
+            docker-compose -f docker/docker-compose-prod.yml up -d --remove-orphans
             echo "✅ Deployment complete"
