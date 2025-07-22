@@ -225,7 +225,13 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ✅ 1. Ensure docker directory exists
+      - name: 'Debug: Show current directory files'
+        run: |
+          echo "🔍 Listing current workspace files"
+          ls -la
+          echo "🔍 Listing docker/ directory files"
+          ls -la docker/
+
       - name: Ensure docker directory exists on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -233,9 +239,10 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
+            echo "📁 Ensuring directory exists: /home/ec2-user/twitter-backend-node/docker"
             mkdir -p /home/ec2-user/twitter-backend-node/docker
+            echo "✅ Directory created (or already existed)"
 
-      # ✅ 2. Upload docker-compose-prod.yml to EC2
       - name: Upload docker-compose file to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -245,7 +252,6 @@ jobs:
           source: docker/docker-compose-prod.yml
           target: /home/ec2-user/twitter-backend-node/docker/
 
-      # ✅ 3. Confirm file is present (optional but recommended)
       - name: Confirm docker-compose file is present on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -253,9 +259,10 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
+            echo "🔍 Verifying uploaded docker-compose file..."
             ls -la /home/ec2-user/twitter-backend-node/docker/docker-compose-prod.yml
+            echo "✅ docker-compose-prod.yml is present"
 
-      # ✅ 4. Run deployment
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -263,20 +270,24 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
+            echo "🚀 Starting Docker Compose deployment"
             export AWS_REGION=${{ env.AWS_REGION }}
             export AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH=${{ secrets.AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH }}
             export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 
+            echo "🔑 Logging in to ECR"
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
             cd /home/ec2-user/twitter-backend-node
 
-            # Create or overwrite .env file with secrets from AWS Secrets Manager
+            echo "📄 Writing secrets to .env"
             aws secretsmanager get-secret-value \
               --secret-id $AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH \
               --region $AWS_REGION \
               --query SecretString \
               --output text > .env
 
+            echo "📦 Pulling and launching containers"
             docker-compose -f docker/docker-compose-prod.yml pull
             docker-compose -f docker/docker-compose-prod.yml up -d --remove-orphans
+            echo "✅ Deployment complete"
