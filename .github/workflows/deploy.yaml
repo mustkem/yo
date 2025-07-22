@@ -194,7 +194,9 @@ jobs:
           script: |
             SECRET_NAME="prod/nestjs-app/envs"
             REGION="us-east-1"
-            ENV_PATH="/home/ec2-user/twitter-backend-node"
+            ENV_PATH="/home/ec2-user/twitter-backend-node/docker/.env"
+
+            sudo mkdir -p /home/ec2-user/twitter-backend-node/docker/
 
             # Create folder if it doesn't exist
             sudo mkdir -p "$(dirname "$ENV_PATH")"
@@ -204,7 +206,7 @@ jobs:
               --secret-id $SECRET_NAME \
               --region $REGION \
               --query SecretString \
-              --output text > /home/ec2-user/twitter-backend-node/docker/.env
+              --output text > "$ENV_PATH"
 
             sudo chown ec2-user:ec2-user "$ENV_PATH"
 
@@ -288,7 +290,7 @@ jobs:
               --secret-id $AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH \
               --region $AWS_REGION \
               --query SecretString \
-              --output text | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+              --output text | jq -r 'to_entries[] | "\(.key)=\(.value)"' > docker/.env
 
             echo "📦 Pulling and launching containers"
             docker-compose -f docker/docker-compose-prod.yml pull
