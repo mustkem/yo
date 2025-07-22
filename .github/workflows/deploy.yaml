@@ -232,17 +232,6 @@ jobs:
           echo "🔍 Listing docker/ directory files"
           ls -la docker/
 
-      - name: Ensure docker directory exists on EC2
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: |
-            echo "📁 Ensuring directory exists: /home/ec2-user/twitter-backend-node/docker"
-            mkdir -p /home/ec2-user/twitter-backend-node/docker
-            echo "✅ Directory created (or already existed)"
-
       - name: Upload docker-compose file to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -250,7 +239,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: docker/docker-compose-prod.yml
-          target: /home/ec2-user/twitter-backend-node/docker-compose-prod.yml
+          target: /home/ec2-user/twitter-backend-node/
 
       - name: Confirm docker-compose file is present on EC2
         uses: appleboy/ssh-action@v1.0.0
@@ -260,8 +249,13 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             echo "🔍 Verifying uploaded docker-compose file..."
-            ls -la /home/ec2-user/twitter-backend-node/docker-compose-prod.yml
-            echo "✅ docker-compose-prod.yml is present"
+            ls -la /home/ec2-user/twitter-backend-node/
+            if [ -f /home/ec2-user/twitter-backend-node/docker-compose-prod.yml ]; then
+              echo "✅ docker-compose-prod.yml is present"
+            else
+              echo "❌ docker-compose-prod.yml is missing"
+              exit 1
+            fi
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.0
