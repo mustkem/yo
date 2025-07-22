@@ -204,7 +204,7 @@ jobs:
               --secret-id $SECRET_NAME \
               --region $REGION \
               --query SecretString \
-              --output text > /home/ec2-user/twitter-backend-node/.env
+              --output text | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
 
             sudo chown ec2-user:ec2-user "$ENV_PATH"
 
