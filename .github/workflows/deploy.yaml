@@ -250,7 +250,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: docker/docker-compose-prod.yml
-          target: /home/ec2-user/twitter-backend-node/docker/
+          target: /home/ec2-user/twitter-backend-node/
 
       - name: Confirm docker-compose file is present on EC2
         uses: appleboy/ssh-action@v1.0.0
