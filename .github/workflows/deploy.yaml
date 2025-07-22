@@ -225,6 +225,17 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # ✅ 1. Ensure docker directory exists
+      - name: Ensure docker directory exists on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            mkdir -p /home/ec2-user/twitter-backend-node/docker
+
+      # ✅ 2. Upload docker-compose-prod.yml to EC2
       - name: Upload docker-compose file to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -234,6 +245,17 @@ jobs:
           source: docker/docker-compose-prod.yml
           target: /home/ec2-user/twitter-backend-node/docker/
 
+      # ✅ 3. Confirm file is present (optional but recommended)
+      - name: Confirm docker-compose file is present on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            ls -la /home/ec2-user/twitter-backend-node/docker/docker-compose-prod.yml
+
+      # ✅ 4. Run deployment
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
