@@ -204,7 +204,7 @@ jobs:
               --secret-id $SECRET_NAME \
               --region $REGION \
               --query SecretString \
-              --output text | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+              --output text > /home/ec2-user/twitter-backend-node/.env
 
             sudo chown ec2-user:ec2-user "$ENV_PATH"
 
@@ -271,6 +271,15 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             echo "🚀 Starting Docker Compose deployment"
+
+            echo "🔧 Ensuring jq is installed..."
+            if ! command -v jq &> /dev/null; then
+              sudo yum install -y jq
+              echo "✅ jq installed"
+            else
+              echo "✅ jq already installed"
+            fi
+
             export AWS_REGION=${{ env.AWS_REGION }}
             export AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH=${{ secrets.AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH }}
             export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
@@ -285,7 +294,7 @@ jobs:
               --secret-id $AWS_SECRETSMANAGER_PROD_NESTJS_ENV_PATH \
               --region $AWS_REGION \
               --query SecretString \
-              --output text > .env
+              --output text | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
 
             echo "📦 Pulling and launching containers"
             docker-compose -f docker/docker-compose-prod.yml pull
