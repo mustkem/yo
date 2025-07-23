@@ -81,7 +81,12 @@ jobs:
           host: ${{ secrets.EC2_PUBLIC_IP }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: echo "Connection successful"
+          script: |
+            echo "📁 Creating and fixing permissions on target directory..."
+            sudo mkdir -p /home/ec2-user/twitter-backend-node/
+            sudo chown -R ec2-user:ec2-user /home/ec2-user/twitter-backend-node/
+            sudo chmod -R u+rwX /home/ec2-user/twitter-backend-node/
+            echo "✅ Directory ready"
 
   nodejs-ci:
     name: Node.js CI
