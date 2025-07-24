@@ -239,6 +239,9 @@ jobs:
           echo "🔍 Listing docker/ directory files"
           ls -la docker/
 
+      - name: Fix all permissions
+        run: chmod -R a+r docker/
+
       - name: Upload docker-compose file to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
