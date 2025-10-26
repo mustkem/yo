@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ApiModule } from 'src/api.module';
-import { TestDbModule } from 'src/commons/db.module';
 import {
   NestFastifyApplication,
   FastifyAdapter,
 } from '@nestjs/platform-fastify';
+import { TestDbModule } from 'apps/api-gateway/src/modules/commons/db.module';
+import { ApiModule } from 'apps/api-gateway/src/api.module';
 
 describe('UsersController (e2e)', () => {
   let app: NestFastifyApplication;

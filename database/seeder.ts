@@ -3,10 +3,10 @@ import * as bcrypt from 'bcrypt';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { config } from 'dotenv';
 
-import { UserEntity } from '../apps/api-gateway/src/users/users.entity';
-import { PasswordEntity } from '../apps/api-gateway/src/auth/passwords.entity';
-import { PostEntity } from '../apps/api-gateway/src/posts/posts.entity';
-import { LikesEntity } from '../apps/api-gateway/src/likes/likes.entity';
+import { UserEntity } from '../apps/api-gateway/src/modules/users/users.entity';
+import { PostEntity } from '../apps/api-gateway/src/modules/posts/posts.entity';
+import { PasswordEntity } from 'apps/api-gateway/src/modules/auth/passwords.entity';
+import { LikesEntity } from 'apps/api-gateway/src/modules/likes/likes.entity';
 
 config(); // Load .env
 
