@@ -42,3 +42,7 @@ class Mention {
   name: string;
   id: string;
 }
+
+export type PostRaw = {
+  [K in keyof PostEntity]: PostEntity[K];
+};

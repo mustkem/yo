@@ -44,3 +44,5 @@ lerna-debug.log*
 terraform.tfvars
 .terraform*.lock.*
 
+/docs
+

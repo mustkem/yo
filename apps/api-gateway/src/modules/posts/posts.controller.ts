@@ -20,6 +20,7 @@ import { PostsService } from './posts.service';
 import { RequiredAuthGuard } from '../auth/auth.guard';
 import { UserEntity } from '../users/users.entity';
 import { User } from '../auth/auth.decorator';
+import { PostCacheService } from './cache/post.cache.service';
 
 class PostCreateRequestBody {
   @ApiProperty() text: string;
@@ -36,7 +37,10 @@ class PostDetailsQueryParams {
 @ApiTags('posts')
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly postCacheService: PostCacheService,
+  ) {}
 
   @Get('/')
   async getAllPosts(
@@ -47,7 +51,7 @@ export class PostsController {
 
   @Get('/:postId')
   async getPostDetails(@Param('postId') postId: string): Promise<PostEntity> {
-    return await this.postsService.getPost(postId);
+    return await this.postCacheService.getOne(postId);
   }
 
   @ApiBearerAuth()

@@ -5,9 +5,15 @@ import { PostEntity } from './posts.entity';
 import { PostsService } from './posts.service';
 import { LikesModule } from '../likes/likes.module';
 import { KafkaModule } from 'libs/kafka/src';
+import { PostCacheModule } from './cache/posts.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PostEntity]), LikesModule, KafkaModule],
+  imports: [
+    TypeOrmModule.forFeature([PostEntity]),
+    LikesModule,
+    KafkaModule,
+    PostCacheModule,
+  ],
   controllers: [PostsController],
   providers: [PostsService],
 })
