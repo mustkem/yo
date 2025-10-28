@@ -57,6 +57,8 @@ export abstract class HybridCacheWithAll<V> extends HybridCache<V> {
     keys?: readonly string[],
     useWriter = false,
   ): Promise<Map<string, V> | null> {
+    console.log('HybridCacheWithAll fetch called with keys:', keys);
+
     if (!keys || !keys.length) {
       // Fetch all - populate both entity cache and IDs cache
       const result = await this.fetchAll();

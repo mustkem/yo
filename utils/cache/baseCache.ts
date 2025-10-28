@@ -123,6 +123,7 @@ export abstract class BaseCache<V> implements Cache<string, V> {
     fetchIfMissing = true,
   ): Promise<CacheResults<string, V>> {
     if (this.config.isEnabled) {
+      console.log('Cache is enabled, reading from cache for keys:', keys);
       // read from cache
       const { hits, misses, missCount } = await this.readFromCache(keys);
       let fetchMisses: string[] | null = null;

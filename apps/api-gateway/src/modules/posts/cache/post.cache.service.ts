@@ -8,12 +8,23 @@ import { getRepository } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { RedisDbCacheService } from '../../redis/redisDbCache.service';
 import { EntityNotFoundError } from 'apps/api-gateway/src/config/errors';
+import { DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 class PostCache extends HybridCacheWithAll<PostEntity> {
-  constructor(readonly redisConnection: RedisConnection) {
+  constructor(
+    readonly redisConnection: RedisConnection,
+    private readonly dataSource: DataSource,
+  ) {
     super({
       namespace: 'Post',
-      config: {} as any,
+      config: {
+        logUsage: false,
+        logPerformance: false,
+        logDebug: false,
+        throttleUsageLog: 1000,
+        isEnabled: true,
+      } as any,
       lruConfig: { max: 2000 },
       memoryTtl: 60, // 1 minute -> cache cron runs every 10secs
       redisConnection: redisConnection,
@@ -35,11 +46,17 @@ class PostCache extends HybridCacheWithAll<PostEntity> {
   protected async fetchSpecific(
     keys: readonly string[],
   ): Promise<Map<string, PostEntity> | null> {
+    console.log('PostCache fetchSpecific called with keys:', keys);
+
     const query = this.buildPostsQuery();
+
+    console.log('Fetching posts with keys:', keys);
 
     if (keys && keys.length) {
       query.andWhere('post.id IN (:...keys)', { keys });
     }
+
+    console.log('Executing query to fetch posts with keys:', keys);
 
     const rawRows = await query.getRawMany<PlainFlatObject>();
     const { posts } = await this.buildPostsMap(rawRows);
@@ -74,8 +91,9 @@ class PostCache extends HybridCacheWithAll<PostEntity> {
       posts,
     };
   }
+
   private buildPostsQuery() {
-    return getRepository(PostEntity).createQueryBuilder('post');
+    return this.dataSource.getRepository(PostEntity).createQueryBuilder('post');
   }
 }
 
@@ -85,8 +103,9 @@ export class PostCacheService {
 
   constructor(
     @Inject(RedisDbCacheService) readonly redisConnection: RedisConnection,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {
-    this.cache = new PostCache(redisConnection);
+    this.cache = new PostCache(redisConnection, dataSource);
   }
 
   /**

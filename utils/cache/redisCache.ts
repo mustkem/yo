@@ -36,6 +36,8 @@ export class RedisCache<V> extends BaseCache<V> implements Cache<string, V> {
   protected async readFromCache(
     keys: readonly string[],
   ): Promise<CacheResultsWithMissCount<string, V>> {
+    console.log('RedisCache readFromCache called with keys:', keys);
+
     const hits = new Map<string, V>();
     const misses: string[] = [];
 
@@ -43,12 +45,15 @@ export class RedisCache<V> extends BaseCache<V> implements Cache<string, V> {
       return { hits, misses, missCount: { redis: 0 } };
     }
 
-    //
+    // provided by ioredis, not something defined in the project.
     const pipeline = this.redis.pipeline();
     for (const key of keys) {
+      // That line queues a GET command on the Redis pipeline for the key built by makeKey(key). Because pipeline is an ioredis Pipeline instance, calling get(...) doesn’t hit Redis immediately—it simply appends GET <namespace:key> to the batched command list. When the code later calls pipeline.exec(), ioredis sends all queued commands in one roundtrip and returns the list of results.
       pipeline.get(this.makeKey(key));
     }
     const values = await pipeline.exec();
+
+    console.log('RedisCache pipeline exec returned values:', values);
 
     // throw if unexpected result was received
     if (!values || values.length !== keys.length) {
@@ -80,6 +85,8 @@ export class RedisCache<V> extends BaseCache<V> implements Cache<string, V> {
         misses.push(keys[i]);
       }
     }
+
+    console.log('RedisCache readFromCache hits:', hits, 'misses:', misses);
 
     return { hits, misses, missCount: { redis: misses.length } };
   }
