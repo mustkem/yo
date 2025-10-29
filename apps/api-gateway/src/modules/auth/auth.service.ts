@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -23,6 +25,56 @@ export class AuthService {
   ) {}
 
   public static PASSWORD_SALT_ROUNDS = 10;
+
+  async registerNewUser(params: {
+    username: string;
+    password: string;
+    name?: string;
+    avatar?: string;
+    bio?: string;
+  }): Promise<UserEntity> {
+    const username = params.username?.trim();
+    const { password, name, avatar, bio } = params;
+
+    if (!username || username.length < 5) {
+      throw new BadRequestException(
+        'Username must be of minimum 5 characters',
+      );
+    }
+
+    if (!password || password.length < 8) {
+      throw new BadRequestException(
+        'Password must be of minimum 8 characters',
+      );
+    }
+
+    if (password.toLowerCase().includes('password')) {
+      throw new BadRequestException(
+        'Password cannot contain the word password itself',
+      );
+    }
+
+    const usernameAlreadyExists = await this.userRepo.findOne({
+      where: { username },
+    });
+
+    if (usernameAlreadyExists) {
+      throw new ConflictException('This username is already taken!');
+    }
+
+    const newUser = this.userRepo.create({
+      username,
+      name,
+      avatar,
+      bio,
+    });
+
+    const savedUser = await this.userRepo.save(newUser);
+
+    await this.createPasswordForNewUser(savedUser.id, password);
+
+    return savedUser;
+  }
 
   async createPasswordForNewUser(
     userId: string,
