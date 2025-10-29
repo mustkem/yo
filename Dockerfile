@@ -9,6 +9,7 @@ COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY apps ./apps
 COPY libs ./libs
+COPY utils ./utils
 COPY build ./build
 
 # Install dependencies and build the app

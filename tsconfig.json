@@ -9,8 +9,12 @@
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "paths": {}
+    "baseUrl": ".",
+    "paths": {
+      "@libs/*": ["libs/*"],
+      "@apps/*": ["apps/*"],
+      "@utils/*": ["utils/*"]
+    },
+    "incremental": true
   }
 }

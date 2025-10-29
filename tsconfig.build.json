@@ -4,8 +4,11 @@
   "compilerOptions": {
     "rootDir": "./",
     "paths": {
+      "@libs/*": ["libs/*"],
+      "@apps/*": ["apps/*"],
+      "@utils/*": ["utils/*"],
       "src": ["./src"]
     }
-  },
+  }
 
 }

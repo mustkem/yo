@@ -1,4 +1,12 @@
 module.exports = {
+  settings: {
+    'import/resolver': {
+      typescript: {
+        // Point to the tsconfig that contains the "paths"
+        project: ['./tsconfig.json'],
+      },
+    },
+  },
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: 'tsconfig.json',

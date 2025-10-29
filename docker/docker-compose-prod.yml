@@ -1,4 +1,5 @@
-version: '3.8'
+version: "3.8"
+name: yoo-stack-prod
 
 services:
   app:
@@ -7,7 +8,7 @@ services:
     container_name: yoo-app-prod
     restart: always
     ports:
-      - '3000:3000'
+      - "3000:3000"
     env_file:
       - .env
     depends_on:
@@ -18,7 +19,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 10s
       retries: 5
       timeout: 5s
@@ -35,7 +36,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       retries: 5
       timeout: 5s
@@ -49,22 +50,22 @@ services:
       KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,INTERNAL://:29092,CONTROLLER://:9093
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_KRAFT_MODE_ENABLED: 'yes'
-      KAFKA_CFG_NODE_ID: '1'
+      KAFKA_KRAFT_MODE_ENABLED: "yes"
+      KAFKA_CFG_NODE_ID: "1"
       KAFKA_CFG_PROCESS_ROLES: controller,broker
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      ALLOW_PLAINTEXT_LISTENER: 'yes'
+      ALLOW_PLAINTEXT_LISTENER: "yes"
     volumes:
       - kafka_data:/bitnami/kafka
     healthcheck:
       test:
         [
-          'CMD',
-          'kafka-topics.sh',
-          '--bootstrap-server',
-          'kafka:29092',
-          '--list',
+          "CMD",
+          "kafka-topics.sh",
+          "--bootstrap-server",
+          "kafka:29092",
+          "--list",
         ]
       interval: 10s
       retries: 5
@@ -77,12 +78,24 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       retries: 5
       timeout: 5s
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - redisinsight_data:/data
 
 volumes:
   mysql_data:
   redis_data:
   kafka_data:
+  redisinsight_data:

@@ -1,15 +1,14 @@
-import { HybridCacheWithAll } from 'utils/cache/hybridCacheWithAll';
 import { PostEntity, PostRaw } from '../posts.entity';
 import { RedisConnection } from '../../redis/utils/redisConnection';
 import { PlainFlatObject } from 'libs/types/plainObject';
 import { groupColumns } from 'libs/utils/groupColumns';
 import { plainToClass } from 'class-transformer';
-import { getRepository } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { RedisDbCacheService } from '../../redis/redisDbCache.service';
 import { EntityNotFoundError } from 'apps/api-gateway/src/config/errors';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { HybridCacheWithAll } from '@utils/cache/hybridCacheWithAll';
 
 class PostCache extends HybridCacheWithAll<PostEntity> {
   constructor(
@@ -89,6 +88,7 @@ class PostCache extends HybridCacheWithAll<PostEntity> {
 
     return {
       posts,
+      postIds,
     };
   }
 
