@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # remove existing containers with conflicting names, ignoring failures
-for container in yoo-redis yoo-mysql kafka redpanda-console yoo-stack-app-1 app; do
+for container in yoo-redis yoo-mysql kafka redpanda-console redisinsight yoo-stack-app-1 app; do
   docker rm -f "$container" >/dev/null 2>&1 || true
 done
 
