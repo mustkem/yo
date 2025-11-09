@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { PostEntity } from './posts.entity';
 import {
   PostSearchBody,
   PostSearchResult,
 } from './types/postSearchBody.interface';
+import { PostEntity } from './posts.entity';
 
 @Injectable()
 export default class PostsSearchService {
@@ -24,7 +24,7 @@ export default class PostsSearchService {
     });
   }
 
-  async search(text: string) {
+  async search(text: string): Promise<PostSearchResult[]> {
     const result = await this.elasticsearchService.search<PostSearchResult>({
       index: this.index,
       body: {
@@ -36,13 +36,8 @@ export default class PostsSearchService {
         },
       },
     } as any);
-    const hits = result.hits.hits;
+    const hits = result.hits.hits || [];
     return hits.map((item) => item._source);
-  }
-
-  async searchForPosts(text: string) {
-    const results = await this.search(text);
-    return results.map((result) => result.hits);
   }
 
   async remove(postId: string) {

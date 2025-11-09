@@ -22,6 +22,7 @@ import { UserEntity } from '../users/users.entity';
 import { User } from '../auth/auth.decorator';
 import { PostCacheService } from './cache/post.cache.service';
 import PostsSearchService from './postsSearch.service';
+import { PostSearchResult } from './types/postSearchBody.interface';
 
 class PostCreateRequestBody {
   @ApiProperty() text: string;
@@ -33,6 +34,7 @@ class PostCreateRequestBody {
 class PostDetailsQueryParams {
   @ApiPropertyOptional() authorId: string;
   @ApiPropertyOptional() hashtags: string[];
+  @ApiPropertyOptional() search: string;
 }
 
 @ApiTags('posts')
@@ -47,7 +49,10 @@ export class PostsController {
   @Get('/')
   async getAllPosts(
     @Query() query: PostDetailsQueryParams,
-  ): Promise<PostEntity[]> {
+  ): Promise<PostEntity[] | PostSearchResult[]> {
+    if (query.search) {
+      return this.postsSearchService.search(query.search);
+    }
     return await this.postsService.getAllPosts(query.authorId);
   }
 
@@ -109,13 +114,5 @@ export class PostsController {
     };
 
     return unlikedPost;
-  }
-
-  @Get()
-  async getPosts(@Query('search') search: string) {
-    if (search) {
-      return this.postsSearchService.searchForPosts(search);
-    }
-    return this.postsService.getAllPosts();
   }
 }
