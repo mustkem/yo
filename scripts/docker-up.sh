@@ -9,9 +9,6 @@ done
 
 docker compose -f docker/docker-compose.yml down --remove-orphans || true
 
-BASE_PORT=${APP_PORT:-3000}
-TARGET_PORT=$BASE_PORT
-
 check_port_in_use() {
   local port=$1
   if command -v lsof >/dev/null 2>&1; then
@@ -29,15 +26,44 @@ check_port_in_use() {
   fi
 }
 
-while check_port_in_use "$TARGET_PORT"; do
-  TARGET_PORT=$((TARGET_PORT + 1))
+allocate_port() {
+  local var_name=$1
+  local default_value=$2
+  local description=$3
+
+  local base_value=$default_value
+  if [ -n "${!var_name:-}" ]; then
+    base_value=${!var_name}
+  fi
+
+  local target_value=$base_value
+  while check_port_in_use "$target_value"; do
+    target_value=$((target_value + 1))
+  done
+
+  export "$var_name"="$target_value"
+
+  if [ "$target_value" != "$base_value" ]; then
+    echo "[docker-up] Port $base_value is busy. Using $target_value for $description."
+  fi
+}
+
+PORT_MAPPINGS=(
+  "APP_PORT|3000|app service"
+  "HOST_MYSQL_PORT|3306|mysql service"
+  "HOST_KAFKA_PORT|9092|kafka service"
+  "HOST_REDPANDA_CONSOLE_PORT|8080|redpanda console"
+  "HOST_REDIS_PORT|6379|redis service"
+  "HOST_REDISINSIGHT_PORT|8001|redis insight"
+  "HOST_ELASTIC_HTTP_PORT|9200|elasticsearch http"
+  "HOST_ELASTIC_TRANSPORT_PORT|9300|elasticsearch transport"
+  "HOST_KIBANA_PORT|5601|kibana service"
+)
+
+for mapping in "${PORT_MAPPINGS[@]}"; do
+  IFS="|" read -r var default desc <<<"$mapping"
+  allocate_port "$var" "$default" "$desc"
 done
-
-export APP_PORT=$TARGET_PORT
-
-if [ "$TARGET_PORT" != "$BASE_PORT" ]; then
-  echo "[docker-up] Port $BASE_PORT is busy. Using $TARGET_PORT for app service."
-fi
 
 MAX_ATTEMPTS=10
 ATTEMPT=1
@@ -56,9 +82,11 @@ while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
   echo "$OUTPUT"
 
   if echo "$OUTPUT" | grep -qi "address already in use"; then
-    TARGET_PORT=$((TARGET_PORT + 1))
-    export APP_PORT=$TARGET_PORT
-    echo "[docker-up] Detected port conflict. Retrying with port $TARGET_PORT (attempt $((ATTEMPT + 1)) of $MAX_ATTEMPTS)."
+    for mapping in "${PORT_MAPPINGS[@]}"; do
+      IFS="|" read -r var default desc <<<"$mapping"
+      allocate_port "$var" "$default" "$desc"
+    done
+    echo "[docker-up] Detected port conflict. Retrying (attempt $((ATTEMPT + 1)) of $MAX_ATTEMPTS)."
     docker compose -f docker/docker-compose.yml down --remove-orphans || true
     ATTEMPT=$((ATTEMPT + 1))
     continue

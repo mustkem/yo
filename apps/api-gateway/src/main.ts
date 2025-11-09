@@ -29,6 +29,10 @@ async function bootstrap() {
     credentials: true, // if you're using cookies or authorization headers
   });
 
+  const tracer = require('dd-trace').init({
+    logInjection: false,
+  });
+
   await app.listen(3000);
 }
 void bootstrap();
