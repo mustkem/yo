@@ -21,6 +21,7 @@ import { RequiredAuthGuard } from '../auth/auth.guard';
 import { UserEntity } from '../users/users.entity';
 import { User } from '../auth/auth.decorator';
 import { PostCacheService } from './cache/post.cache.service';
+import PostsSearchService from './postsSearch.service';
 
 class PostCreateRequestBody {
   @ApiProperty() text: string;
@@ -40,6 +41,7 @@ export class PostsController {
   constructor(
     private readonly postsService: PostsService,
     private readonly postCacheService: PostCacheService,
+    private readonly postsSearchService: PostsSearchService,
   ) {}
 
   @Get('/')
@@ -61,13 +63,13 @@ export class PostsController {
     @User() author: UserEntity,
     @Body() post: PostCreateRequestBody,
   ): Promise<PostEntity> {
-    const createdPost = await this.postsService.createPost(
-      post,
+    const createdPost = await this.postsService.createPost({
+      post: { text: post.text },
       author,
-      post.originalPostId,
-      post.replyToPostId,
-      post.links,
-    );
+      originalPostId: post.originalPostId,
+      replyToPostId: post.replyToPostId,
+      links: post.links,
+    });
     return createdPost;
   }
 
@@ -107,5 +109,13 @@ export class PostsController {
     };
 
     return unlikedPost;
+  }
+
+  @Get()
+  async getPosts(@Query('search') search: string) {
+    if (search) {
+      return this.postsSearchService.searchForPosts(search);
+    }
+    return this.postsService.getAllPosts();
   }
 }

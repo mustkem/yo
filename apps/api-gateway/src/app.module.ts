@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ApiModule } from './api.module';
 import { AppConfigModule } from 'libs/config/src';
 import { DatabaseModule } from './modules/commons/db.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [AppConfigModule, DatabaseModule, ApiModule],

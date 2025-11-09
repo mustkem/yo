@@ -11,6 +11,9 @@ import { AuthService } from '../auth/auth.service';
 import { UserEntity } from '../users/users.entity';
 import { KafkaProducerService } from 'libs/kafka/src/kafka.producer.service';
 import { KafkaTopics } from 'libs/kafka/src/kafka.config';
+import PostsSearchService from './postsSearch.service';
+import { CreatePostDto } from './types/createPost.dto';
+import { In } from 'typeorm';
 
 @Injectable()
 export class PostsService {
@@ -20,6 +23,7 @@ export class PostsService {
     private readonly kafkaProducerService: KafkaProducerService,
     @InjectRepository(PostEntity)
     private postsRepository: PostsRepository,
+    private postsSearchService: PostsSearchService,
   ) {}
 
   /**
@@ -77,22 +81,26 @@ export class PostsService {
    */
   async deletePost(id: string): Promise<boolean> {
     const deleteResult = await this.postsRepository.delete({ id });
+    if (deleteResult.affected === 1) await this.postsSearchService.remove(id);
     return deleteResult.affected === 1;
   }
 
   /**
    * @description create post
    */
-  async createPost(
-    post: Partial<PostEntity>,
-    author: UserEntity,
-    originalPostId: string,
-    replyToPostId: string,
-    links: string[],
-  ): Promise<PostEntity> {
+  async createPost(post: CreatePostDto): Promise<PostEntity> {
     // TODO: detect #hashtags in the post and create hashtag entities for them
     // TODO: deletect @user mentions in the post
-    if (!post.text && !originalPostId) {
+
+    const {
+      post: { text },
+      author,
+      originalPostId,
+      replyToPostId,
+      links,
+    } = post;
+
+    if (!text && !originalPostId) {
       throw new BadRequestException('Post must contain text or be a repost');
     }
 
@@ -101,7 +109,7 @@ export class PostsService {
     }
 
     const newPost = new PostEntity();
-    newPost.text = post.text;
+    newPost.text = text;
     newPost.author = author;
 
     if (originalPostId) {
@@ -142,6 +150,8 @@ export class PostsService {
       },
       KafkaTopics.PostCreated,
     );
+
+    await this.postsSearchService.indexPost(savedPost);
 
     return savedPost;
   }

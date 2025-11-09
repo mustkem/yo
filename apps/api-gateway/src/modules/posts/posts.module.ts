@@ -6,6 +6,8 @@ import { PostsService } from './posts.service';
 import { LikesModule } from '../likes/likes.module';
 import { KafkaModule } from 'libs/kafka/src';
 import { PostCacheModule } from './cache/posts.module';
+import PostsSearchService from './postsSearch.service';
+import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
@@ -13,8 +15,9 @@ import { PostCacheModule } from './cache/posts.module';
     LikesModule,
     KafkaModule,
     PostCacheModule,
+    SearchModule,
   ],
   controllers: [PostsController],
-  providers: [PostsService],
+  providers: [PostsService, PostsSearchService],
 })
 export class PostsModule {}
