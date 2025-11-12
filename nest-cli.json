@@ -17,13 +17,13 @@
         "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
       }
     },
-    "notifications-service": {
+    "event-service": {
       "type": "application",
-      "root": "apps/notifications-service",
+      "root": "apps/event-service",
       "entryFile": "main",
-      "sourceRoot": "apps/notifications-service/src",
+      "sourceRoot": "apps/event-service/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/notifications-service/tsconfig.app.json"
+        "tsConfigPath": "apps/event-service/tsconfig.app.json"
       }
     }
   }

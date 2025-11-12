@@ -4,7 +4,7 @@ import { ConsumerConfig, KafkaMessage } from 'kafkajs';
 import { KafkaTopics } from 'libs/kafka/src/kafka.config';
 
 @Injectable()
-export class NotificationsService implements OnModuleInit {
+export class EventService implements OnModuleInit {
   constructor(private readonly kafkaConsumer: KafkaConsumerService) {}
 
   async onModuleInit() {
@@ -14,7 +14,7 @@ export class NotificationsService implements OnModuleInit {
       // Same groupId = shared work (only one processes each message)
       // Different groupIds = independent consumption (both get the message)
       // groupId is only used in consumers
-      config: { groupId: 'notifications-service-group' } as ConsumerConfig,
+      config: { groupId: 'event-service-group' } as ConsumerConfig,
       onMessage: this.handlePostCreated.bind(this),
     });
   }

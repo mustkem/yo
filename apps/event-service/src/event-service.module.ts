@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { KafkaModule } from 'libs/kafka/src'; // your Kafka module path
-import { NotificationsService } from './notifications-service.service';
+import { EventService } from './event-service.service';
 
 @Module({
   imports: [KafkaModule],
-  providers: [NotificationsService],
+  providers: [EventService],
 })
-export class NotificationsServiceModule {}
+export class EventServiceModule {}
