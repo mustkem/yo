@@ -20,7 +20,7 @@
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:api-gateway": "nest start --watch",
-    "start:notifications": "nest start Notifications-service --watch",
+    "start:notifications": "nest start notifications-service --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/api-gateway/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
