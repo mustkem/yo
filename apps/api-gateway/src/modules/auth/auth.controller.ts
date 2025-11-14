@@ -52,7 +52,7 @@ export class AuthController {
   @ApiResponse({ type: LoginResponseBody })
   @Post('/login')
   async login(@Body() body: LoginRequestBody) {
-    const session = await this.authService.createNewSession(
+    const session = await this.authService.createNewSessionLogin(
       body.username,
       body.password,
     );

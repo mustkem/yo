@@ -5,10 +5,12 @@ import { AuthService } from './auth.service';
 import { PasswordEntity } from './passwords.entity';
 import { SessionsEntity } from './sessions.entity';
 import { UserEntity } from '../users/users.entity';
+import { KafkaModule } from 'libs/kafka/src';
 
 @Global()
 @Module({
   imports: [
+    KafkaModule,
     TypeOrmModule.forFeature([
       PasswordEntity,
       SessionsEntity,

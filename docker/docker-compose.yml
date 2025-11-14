@@ -15,7 +15,7 @@ services:
       DB_DATABASE_NAME: yoodb
       DB_USER: yooadmin
       DB_PASSWORD: yoopass
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: kafka:9092
       REDIS_HOST: yoo-redis
       REDIS_PORT: 6379
     depends_on:
@@ -52,15 +52,16 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
+      - "29092:29092"
       - "9093:9093"
     environment:
       # --- Core single-node KRaft setup ---
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
 
       # --- Topics and replication ---
@@ -89,12 +90,12 @@ services:
     restart: unless-stopped
 
   redpanda-console:
-    image: docker.redpanda.com/redpandadata/console:latest
+    image: docker.redpanda.com/redpandadata/console:v3.2.2
     container_name: redpanda-console
     ports:
       - "${HOST_REDPANDA_CONSOLE_PORT:-8080}:8080"
     environment:
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
       - kafka
 

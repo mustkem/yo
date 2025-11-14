@@ -12,6 +12,8 @@ import { PasswordEntity } from './passwords.entity';
 import { SessionsEntity } from './sessions.entity';
 import { UserEntity } from '../users/users.entity';
 import { UsersRepository } from '../users/users.repository';
+import { KafkaProducerService } from 'libs/kafka/src/kafka.producer.service';
+import { KafkaTopics } from 'libs/kafka/src/kafka.config';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +24,7 @@ export class AuthService {
     private passwordRepo: Repository<PasswordEntity>,
     @InjectRepository(SessionsEntity)
     private sessionRepo: Repository<SessionsEntity>,
+    private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
   public static PASSWORD_SALT_ROUNDS = 10;
@@ -37,15 +40,11 @@ export class AuthService {
     const { password, name, avatar, bio } = params;
 
     if (!username || username.length < 5) {
-      throw new BadRequestException(
-        'Username must be of minimum 5 characters',
-      );
+      throw new BadRequestException('Username must be of minimum 5 characters');
     }
 
     if (!password || password.length < 8) {
-      throw new BadRequestException(
-        'Password must be of minimum 8 characters',
-      );
+      throw new BadRequestException('Password must be of minimum 8 characters');
     }
 
     if (password.toLowerCase().includes('password')) {
@@ -93,7 +92,7 @@ export class AuthService {
     return await this.passwordRepo.save(newPassword);
   }
 
-  async createNewSession(username: string, password: string) {
+  async createNewSessionLogin(username: string, password: string) {
     const user = await this.userRepo.findOne({ where: { username } });
 
     if (!user) {
@@ -109,6 +108,15 @@ export class AuthService {
     const session = new SessionsEntity();
     session.userId = userPassword.userId;
     const savedSession = await this.sessionRepo.save(session);
+    await this.kafkaProducer.produce(
+      {
+        userId: user.id,
+        sessionId: savedSession.id,
+        username: user.username,
+        loggedInAt: new Date().toISOString(),
+      },
+      KafkaTopics.UserLoggedIn,
+    );
     return savedSession;
   }
 
