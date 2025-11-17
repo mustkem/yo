@@ -4,9 +4,7 @@ import {
   ConsumerSubscribeTopic,
   Kafka,
   KafkaMessage,
-  Producer,
 } from 'kafkajs';
-import { IProducer } from './kafka.producer.service';
 import { Logger } from '@nestjs/common';
 import { IConsumer } from './kafka.consumer.service';
 import * as retry from 'async-retry';
@@ -36,6 +34,11 @@ export class KafkaConsumer implements IConsumer {
     await this.consumer.run({
       eachMessage: async ({ message, partition }) => {
         this.logger.debug(`Processing message partition: ${partition}`);
+        this.logger.log(
+          `Received message: key=${message.key?.toString() ?? 'null'} value=${
+            message.value?.toString() ?? 'null'
+          } headers=${JSON.stringify(message.headers ?? {})}`,
+        );
         try {
           await retry(async () => onMessage(message), {
             retries: 3,

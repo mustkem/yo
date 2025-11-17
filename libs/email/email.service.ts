@@ -116,6 +116,33 @@ export class EmailService {
   }
 
   /**
+   * Send a single templated email using AWS SES SendTemplatedEmail
+   */
+  async sendTemplatedEmail({
+    fromEmail,
+    toEmail,
+    templateId,
+    templateData,
+  }: {
+    fromEmail: string;
+    toEmail: string;
+    templateId: string;
+    templateData: Record<string, any>;
+  }): Promise<{ messageId?: string }> {
+    const params = {
+      Source: fromEmail,
+      Destination: {
+        ToAddresses: [toEmail],
+      },
+      Template: templateId,
+      TemplateData: JSON.stringify(templateData),
+    };
+
+    const result = await this.awsService.SES.sendTemplatedEmail(params).promise();
+    return { messageId: result.MessageId };
+  }
+
+  /**
    * Split array into chunks of specified size
    */
   private chunkArray<T>(array: T[], chunkSize: number): T[][] {

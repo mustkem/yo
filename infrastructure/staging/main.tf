@@ -250,3 +250,10 @@ resource "aws_eip_association" "staging_eip_assoc" {
   instance_id   = aws_instance.staging_server.id
   allocation_id = aws_eip.staging_eip.id
 }
+
+# -------------------------
+# SES TEMPLATES MODULE
+# -------------------------
+module "ses_templates" {
+  source = "./templates/email_confirmation"
+}
