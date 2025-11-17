@@ -27,7 +27,7 @@ export class UsersService {
    * @description find a user with a given username
    * @returns {Promise<UserEntity>} user if found
    */
-  public async getUserByUsername(username: string): Promise<UserEntity> {
+  public async getUserByEmail(username: string): Promise<UserEntity> {
     return await this.userRepo.findOne({ where: { username } });
   }
 
@@ -54,9 +54,6 @@ export class UsersService {
     user: Partial<UserEntity>,
     password: string,
   ): Promise<UserEntity> {
-    if (user.username.length < 5)
-      throw new BadRequestException('Username must be of minimum 5 characters');
-
     if (password.length < 8)
       throw new BadRequestException('Password must be of minimum 8 characters');
 
@@ -65,9 +62,9 @@ export class UsersService {
         'Password cannot contain the word password itself',
       );
 
-    const usernameAlreadyExists = await this.getUserByUsername(user.username);
-    if (usernameAlreadyExists)
-      throw new ConflictException('This username is already taken!');
+    const alreadyExists = await this.getUserByEmail(user.email);
+    if (alreadyExists)
+      throw new ConflictException('Account already exists for this email');
 
     const newUser = await this.userRepo.save(user);
 

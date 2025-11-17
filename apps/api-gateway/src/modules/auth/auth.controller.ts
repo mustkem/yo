@@ -15,7 +15,6 @@ class LoginResponseBody {
 }
 
 class RegisterRequestBody {
-  @ApiProperty() username: string;
   @ApiProperty() email: string;
   @ApiProperty() password: string;
   @ApiProperty({ required: false }) name?: string;
@@ -25,7 +24,6 @@ class RegisterRequestBody {
 
 class RegisterResponseBody {
   @ApiProperty() id: string;
-  @ApiProperty() username: string;
   @ApiProperty({ required: false }) email?: string;
   @ApiProperty({ required: false }) name?: string;
   @ApiProperty({ required: false }) avatar?: string;
@@ -33,14 +31,12 @@ class RegisterResponseBody {
 
   constructor(params: {
     id: string;
-    username: string;
     email?: string;
     name?: string;
     avatar?: string;
     bio?: string;
   }) {
     this.id = params.id;
-    this.username = params.username;
     this.email = params.email;
     this.name = params.name;
     this.avatar = params.avatar;
@@ -69,7 +65,7 @@ export class AuthController {
     const user = await this.authService.registerNewUser(body);
     return new RegisterResponseBody({
       id: user.id,
-      username: user.username,
+      email: user.email,
       name: user.name,
       avatar: user.avatar,
       bio: user.bio,

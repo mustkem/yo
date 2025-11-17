@@ -1,7 +1,4 @@
-import { PostEntity1751389231008 } from './1751389231008-PostEntity';
-import { AddEmailInUserTable1763357745223 } from './1763357745223-AddEmailInUserTable';
+import { InitSchema1730001000000 } from './1730001000000-InitSchema';
 
-export const migrations = [
-  PostEntity1751389231008,
-  AddEmailInUserTable1763357745223,
-];
+// Migration chain: baseline schema
+export const migrations = [InitSchema1730001000000];

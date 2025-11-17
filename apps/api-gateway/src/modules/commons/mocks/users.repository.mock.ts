@@ -6,6 +6,7 @@ export class MockUsersRepository extends Repository<UserEntity> {
   async findOne() {
     const mockUser: UserEntity = {
       id: 'test-uuid',
+      email: 'tE0xg@example.com',
       name: 'John Doe',
       followeeCount: 1,
       followerCount: 1,

@@ -10,6 +10,7 @@ import {
   TypeOrmModuleAsyncOptions,
   TypeOrmModuleOptions,
 } from '@nestjs/typeorm';
+import { migrations } from '../../../../../database/migrations';
 
 export const entities = [
   UserEntity,
@@ -32,7 +33,10 @@ export const typeOrmConfig: TypeOrmModuleAsyncOptions = {
     username: configService.get<string>('DB_USER'),
     password: configService.get<string>('DB_PASSWORD'),
     database: configService.get<string>('DB_DATABASE_NAME'),
-    synchronize: true,
+    // Schema comes from migrations to avoid destructive sync updates
+    synchronize: false,
+    migrationsRun: true,
+    migrations,
     logger: 'advanced-console',
     logging: 'all',
     namingStrategy: new SnakeNamingStrategy(),

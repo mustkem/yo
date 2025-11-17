@@ -27,7 +27,7 @@ import { CurrentUser } from '../commons/decorators/current-user.decorator';
 import { S3Service } from '../aws/s3.service';
 
 class UserCreateRequestBody {
-  @ApiProperty() username: string;
+  @ApiProperty() email: string;
   @ApiProperty() password: string;
   @ApiPropertyOptional() name?: string;
   @ApiPropertyOptional() avatar?: string;
@@ -49,14 +49,14 @@ export class UsersController {
     private readonly s3Service: S3Service,
   ) {}
 
-  @Get('/@:username')
-  async getUserByUsername(@Param('username') username: string): Promise<any> {
-    const user = await this.userService.getUserByUsername(username);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
-  }
+  // @Get('/@:username')
+  // async getUserByUsername(@Param('username') username: string): Promise<any> {
+  //   const user = await this.userService.getUserByUsername(username);
+  //   if (!user) {
+  //     throw new NotFoundException('User not found');
+  //   }
+  //   return user;
+  // }
 
   @Get('/:userid')
   async getUserByUserid(@Param('userid') userid: string): Promise<UserEntity> {

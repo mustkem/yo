@@ -4,10 +4,10 @@ import { UserEntity } from '../users/users.entity';
 
 @Entity('passwords')
 export class PasswordEntity extends YooBaseEntity {
-  @Column()
-  userId: string;
+  @Column({ name: 'user_id' })
+  user_id: string;
 
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   @OneToOne(() => UserEntity)
   user: UserEntity;
 

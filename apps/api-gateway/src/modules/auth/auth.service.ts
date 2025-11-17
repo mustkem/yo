@@ -30,17 +30,17 @@ export class AuthService {
   public static PASSWORD_SALT_ROUNDS = 10;
 
   async registerNewUser(params: {
-    username: string;
+    email: string;
     password: string;
     name?: string;
     avatar?: string;
     bio?: string;
   }): Promise<UserEntity> {
-    const username = params.username?.trim();
+    const email = params.email?.trim();
     const { password, name, avatar, bio } = params;
 
-    if (!username || username.length < 5) {
-      throw new BadRequestException('Username must be of minimum 5 characters');
+    if (!email || email.length < 5) {
+      throw new BadRequestException('email must be of minimum 5 characters');
     }
 
     if (!password || password.length < 8) {
@@ -53,16 +53,16 @@ export class AuthService {
       );
     }
 
-    const usernameAlreadyExists = await this.userRepo.findOne({
-      where: { username },
+    const alreadyExists = await this.userRepo.findOne({
+      where: { email },
     });
 
-    if (usernameAlreadyExists) {
-      throw new ConflictException('This username is already taken!');
+    if (alreadyExists) {
+      throw new ConflictException('This account is already exists!');
     }
 
     const newUser = this.userRepo.create({
-      username,
+      email,
       name,
       avatar,
       bio,
@@ -79,7 +79,9 @@ export class AuthService {
     userId: string,
     password: string,
   ): Promise<PasswordEntity> {
-    const existing = await this.passwordRepo.findOne({ where: { userId } });
+    const existing = await this.passwordRepo.findOne({
+      where: { user_id: userId },
+    });
     if (existing) {
       throw new UnauthorizedException(
         'This user already has a password, cannot set new password',
@@ -87,7 +89,7 @@ export class AuthService {
     }
 
     const newPassword = new PasswordEntity();
-    newPassword.userId = userId;
+    newPassword.user_id = userId;
     newPassword.password = await this.passToHash(password);
     return await this.passwordRepo.save(newPassword);
   }
@@ -96,24 +98,23 @@ export class AuthService {
     const user = await this.userRepo.findOne({ where: { email } });
 
     if (!user) {
-      throw new NotFoundException('Username does not exist');
+      throw new NotFoundException('Account does not exist');
     }
     const userPassword = await this.passwordRepo.findOne({
-      where: { userId: user.id },
+      where: { user_id: user.id },
     });
     const passMatch = await this.matchPassHash(password, userPassword.password);
     if (!passMatch) {
       throw new UnauthorizedException('Password is wrong');
     }
     const session = new SessionsEntity();
-    session.userId = userPassword.userId;
+    session.userId = userPassword.user_id;
     const savedSession = await this.sessionRepo.save(session);
     await this.kafkaProducer.produce(
       {
         userId: user.id,
         email: user.email,
         sessionId: savedSession.id,
-        username: user.username,
         loggedInAt: new Date().toISOString(),
       },
       KafkaTopics.UserLoggedIn,
