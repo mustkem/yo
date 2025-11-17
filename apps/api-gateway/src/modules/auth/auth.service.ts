@@ -92,8 +92,8 @@ export class AuthService {
     return await this.passwordRepo.save(newPassword);
   }
 
-  async createNewSessionLogin(username: string, password: string) {
-    const user = await this.userRepo.findOne({ where: { username } });
+  async createNewSessionLogin(email: string, password: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
 
     if (!user) {
       throw new NotFoundException('Username does not exist');
@@ -111,6 +111,7 @@ export class AuthService {
     await this.kafkaProducer.produce(
       {
         userId: user.id,
+        email: user.email,
         sessionId: savedSession.id,
         username: user.username,
         loggedInAt: new Date().toISOString(),

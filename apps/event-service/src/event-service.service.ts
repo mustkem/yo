@@ -58,14 +58,25 @@ export class EventService implements OnModuleInit {
       process.env.SES_EMAIL_CONFIRMATION_TEMPLATE ||
       'EmailConfirmationTemplate';
 
-    await this.emailService.sendTemplatedEmail({
-      templateId,
-      fromEmail,
-      toEmail: recipientEmail,
-      templateData: {
-        username: data.username ?? 'user',
-        loggedInAt: data.loggedInAt ?? new Date().toISOString(),
-      },
-    });
+    try {
+      const result = await this.emailService.sendTemplatedEmail({
+        templateId,
+        fromEmail,
+        toEmail: recipientEmail,
+        templateData: {
+          username: data.username ?? 'user',
+          loggedInAt: data.loggedInAt ?? new Date().toISOString(),
+        },
+      });
+      console.log('✅ Login email sent', {
+        to: recipientEmail,
+        messageId: result.messageId,
+      });
+    } catch (error) {
+      console.error('❌ Failed to send login email', {
+        to: recipientEmail,
+        error,
+      });
+    }
   }
 }
