@@ -4,7 +4,7 @@ import { YooBaseEntity } from '../commons/base.entity';
 
 @Entity('users')
 export class UserEntity extends YooBaseEntity {
-  @Column({ length: 30, nullable: true, unique: true })
+  @Column({ length: 30, nullable: true })
   username: string;
 
   @Column({ length: 255, nullable: false, unique: true })

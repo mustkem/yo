@@ -31,6 +31,7 @@ export class AuthService {
 
   async registerNewUser(params: {
     email: string;
+    username: string;
     password: string;
     name?: string;
     avatar?: string;
@@ -63,6 +64,7 @@ export class AuthService {
 
     const newUser = this.userRepo.create({
       email,
+      username: params.username,
       name,
       avatar,
       bio,

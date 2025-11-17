@@ -1,6 +1,5 @@
 import {
   CreateDateColumn,
-  PrimaryColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -9,7 +8,7 @@ import {
  * Base entity which is extended by all entities in our application.
  */
 export abstract class YooBaseEntity {
-  @PrimaryColumn('uuid', { length: 36, unique: true })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -17,4 +16,12 @@ export abstract class YooBaseEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  // @BeforeInsert()
+  // ensureId(): void {
+  //   // MySQL schema uses char(36) without default; generate UUID in app if missing
+  //   if (!this.id) {
+  //     this.id = randomUUID();
+  //   }
+  // }
 }
