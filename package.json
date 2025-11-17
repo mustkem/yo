@@ -28,6 +28,8 @@
     "migration:status": "ts-node -r tsconfig-paths/register database/migrations/status.ts",
     "migration:lint": "ts-node -r tsconfig-paths/register database/migrations/lint.ts",
     "migration:test": "jest --config database/migrations/__tests__/jest.config.js",
+    "dynamodb:create-tables": "ts-node -r tsconfig-paths/register database/dynamodb/create-tables.ts",
+    "dynamodb:create-tables:force": "ts-node -r tsconfig-paths/register database/dynamodb/create-tables.ts --force",
     "prebuild": "rimraf dist",
     "postinstall": "node build/postInstall.js",
     "build": "nest build",
@@ -48,7 +50,9 @@
   },
   "dependencies": {
     "@apollo/server": "^5.1.0",
+    "@aws-sdk/client-dynamodb": "^3.932.0",
     "@aws-sdk/client-s3": "^3.842.0",
+    "@aws-sdk/lib-dynamodb": "^3.932.0",
     "@aws-sdk/s3-request-presigner": "^3.842.0",
     "@elastic/elasticsearch": "^8.15.0",
     "@nestjs/common": "^11.1.3",

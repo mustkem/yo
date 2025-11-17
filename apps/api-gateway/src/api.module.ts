@@ -4,8 +4,9 @@ import { PostsModule } from './modules/posts/posts.module';
 import { HashtagsModule } from './modules/hashtags/hashtags.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LikesModule } from './modules/likes/likes.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
-  imports: [UsersModule, PostsModule, HashtagsModule, AuthModule, LikesModule],
+  imports: [UsersModule, PostsModule, HashtagsModule, AuthModule, LikesModule, NotificationsModule],
 })
 export class ApiModule {}
