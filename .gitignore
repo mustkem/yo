@@ -46,3 +46,8 @@ terraform.tfvars
 
 /docs
 
+# Database backups (contains sensitive data)
+database/backups/*.sql
+database/backups/*.sql.gz
+!database/backups/.gitkeep
+
