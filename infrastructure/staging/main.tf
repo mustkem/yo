@@ -157,10 +157,10 @@ resource "aws_network_acl_rule" "outbound_all" {
 }
 
 # -------------------------
-# IAM ROLE for EC2 + ECR Access
+# IAM ROLE for EC2 + ECR + DynamoDB Access
 # -------------------------
 resource "aws_iam_role" "ec2_ecr_role" {
-  name = "ec2-ecr-access-role"
+  name = "ec2-ecr-dynamodb-access-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -174,18 +174,26 @@ resource "aws_iam_role" "ec2_ecr_role" {
   })
 
   tags = {
-    Name        = "ec2-ecr-access-role"
+    Name        = "ec2-ecr-dynamodb-access-role"
     Environment = "staging"
+    ManagedBy   = "Terraform"
   }
 }
 
+# Attach ECR read-only policy
 resource "aws_iam_role_policy_attachment" "ecr_read_only" {
   role       = aws_iam_role.ec2_ecr_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# Attach DynamoDB access policy
+resource "aws_iam_role_policy_attachment" "dynamodb_access" {
+  role       = aws_iam_role.ec2_ecr_role.name
+  policy_arn = module.dynamodb.dynamodb_access_policy_arn
+}
+
 resource "aws_iam_instance_profile" "ec2_ecr_profile" {
-  name = "ec2-ecr-profile"
+  name = "ec2-ecr-dynamodb-profile"
   role = aws_iam_role.ec2_ecr_role.name
 }
 
@@ -249,6 +257,42 @@ resource "aws_eip" "staging_eip" {
 resource "aws_eip_association" "staging_eip_assoc" {
   instance_id   = aws_instance.staging_server.id
   allocation_id = aws_eip.staging_eip.id
+}
+
+# -------------------------
+# DYNAMODB MODULE
+# -------------------------
+module "dynamodb" {
+  source = "./modules/dynamodb"
+
+  environment              = "staging"
+  notifications_table_name = var.dynamodb_notifications_table_name
+
+  # Billing mode (PAY_PER_REQUEST for staging, can switch to PROVISIONED for production)
+  billing_mode = var.dynamodb_billing_mode
+
+  # Enable streams for real-time processing
+  stream_enabled   = var.dynamodb_stream_enabled
+  stream_view_type = var.dynamodb_stream_view_type
+
+  # TTL configuration (auto-delete old notifications after 90 days)
+  ttl_enabled        = var.dynamodb_ttl_enabled
+  ttl_attribute_name = var.dynamodb_ttl_attribute_name
+
+  # Backup and recovery
+  point_in_time_recovery_enabled = var.dynamodb_pitr_enabled
+  # Note: prevent_destroy is set directly in the module as a literal value
+
+  # CloudWatch alarms
+  enable_cloudwatch_alarms = var.dynamodb_enable_alarms
+
+  # Tags
+  common_tags = {
+    Project     = "Twitter Backend"
+    Environment = "staging"
+    ManagedBy   = "Terraform"
+    Service     = "DynamoDB"
+  }
 }
 
 # -------------------------

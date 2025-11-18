@@ -16,3 +16,32 @@ output "ecr_repository_url" {
   description = "URL of the ECR repository"
   value       = aws_ecr_repository.nestjs_app.repository_url
 }
+
+# -------------------------
+# DYNAMODB OUTPUTS
+# -------------------------
+
+output "dynamodb_notifications_table_name" {
+  description = "Name of the DynamoDB notifications table"
+  value       = module.dynamodb.notifications_table_name
+}
+
+output "dynamodb_notifications_table_arn" {
+  description = "ARN of the DynamoDB notifications table"
+  value       = module.dynamodb.notifications_table_arn
+}
+
+output "dynamodb_notifications_stream_arn" {
+  description = "ARN of the DynamoDB stream for notifications table"
+  value       = module.dynamodb.notifications_table_stream_arn
+}
+
+output "dynamodb_access_policy_arn" {
+  description = "ARN of the DynamoDB full access IAM policy"
+  value       = module.dynamodb.dynamodb_access_policy_arn
+}
+
+output "dynamodb_read_only_policy_arn" {
+  description = "ARN of the DynamoDB read-only IAM policy"
+  value       = module.dynamodb.dynamodb_read_only_policy_arn
+}

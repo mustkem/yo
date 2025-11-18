@@ -11,6 +11,7 @@ This project now includes a complete **Notifications System** powered by **Amazo
 ### 1. **Notifications Module** (`apps/api-gateway/src/modules/notifications/`)
 
 A complete notification system with:
+
 - ✅ Real-time notification creation via Kafka events
 - ✅ DynamoDB for storage (fast, scalable, serverless)
 - ✅ REST API endpoints for CRUD operations
@@ -48,19 +49,21 @@ database/dynamodb/
 }
 ```
 
-### 4. **NPM Scripts Added**
+### 4. **Infrastructure as Code (Terraform)**
 
-```bash
-npm run dynamodb:create-tables        # Create DynamoDB tables
-npm run dynamodb:create-tables:force  # Recreate tables (delete + create)
-```
+DynamoDB tables are managed using Terraform:
+
+- **Location**: `infrastructure/staging/modules/dynamodb/`
+- **Deploy**: `cd infrastructure/staging && terraform apply`
+- **Features**: IAM policies, CloudWatch alarms, PITR, auto-scaling
 
 ### 5. **Environment Variables**
 
 Added to `.env`:
+
 ```bash
-DYNAMODB_ENDPOINT=http://localhost:8000  # Use DynamoDB Local for development
-DYNAMODB_NOTIFICATIONS_TABLE=user-notifications
+DYNAMODB_NOTIFICATIONS_TABLE=staging-user-notifications  # Table name from Terraform
+AWS_REGION=us-east-1
 ```
 
 ---
@@ -78,6 +81,7 @@ DYNAMODB_NOTIFICATIONS_TABLE=user-notifications
 7. **Cost-Effective**: Pay only for what you use
 
 ### Perfect for:
+
 - ✅ High-volume user notifications
 - ✅ Time-series data (naturally sorted by timestamp)
 - ✅ Event-driven architectures
@@ -89,12 +93,13 @@ DYNAMODB_NOTIFICATIONS_TABLE=user-notifications
 
 ### Table: `user-notifications`
 
-| Key | Type | Description |
-|-----|------|-------------|
-| **PK** | Partition Key | `USER#<userId>` - Groups notifications by user |
-| **SK** | Sort Key | `NOTIF#<timestamp>#<notifId>` - Chronological sorting |
+| Key    | Type          | Description                                           |
+| ------ | ------------- | ----------------------------------------------------- |
+| **PK** | Partition Key | `USER#<userId>` - Groups notifications by user        |
+| **SK** | Sort Key      | `NOTIF#<timestamp>#<notifId>` - Chronological sorting |
 
 **Additional Attributes:**
+
 - `notificationId` (UUID)
 - `type` (like, follow, reply, repost, mention)
 - `actorId`, `actorUsername`, `actorAvatar` (who triggered it)
@@ -104,6 +109,7 @@ DYNAMODB_NOTIFICATIONS_TABLE=user-notifications
 - `ttl` (Unix timestamp for auto-deletion after 90 days)
 
 **Access Pattern:**
+
 ```
 Query: PK = "USER#<userId>" AND SK begins_with "NOTIF#"
 Result: All notifications for a user, sorted newest first
@@ -116,30 +122,35 @@ Result: All notifications for a user, sorted newest first
 All endpoints require Bearer token authentication.
 
 ### Get Notifications
+
 ```http
 GET /notifications?limit=20&cursor=<base64>&unreadOnly=false
 Authorization: Bearer <token>
 ```
 
 ### Get Unread Count
+
 ```http
 GET /notifications/unread-count
 Authorization: Bearer <token>
 ```
 
 ### Mark as Read
+
 ```http
 POST /notifications/:id/read
 Authorization: Bearer <token>
 ```
 
 ### Mark All as Read
+
 ```http
 POST /notifications/read-all
 Authorization: Bearer <token>
 ```
 
 ### Delete Notification
+
 ```http
 DELETE /notifications/:id
 Authorization: Bearer <token>
@@ -151,13 +162,13 @@ Authorization: Bearer <token>
 
 Notifications are automatically created from Kafka events:
 
-| Kafka Topic | Notification Type | Trigger |
-|-------------|-------------------|---------|
-| `message-liked` | `like` | User likes a post |
-| `user-followed` | `follow` | User follows another user |
-| `post-reposted` | `repost` | User reposts a post |
-| `post-created` (with `replyToPostId`) | `reply` | User replies to a post |
-| `post-created` (with `mentions`) | `mention` | User mentions others |
+| Kafka Topic                           | Notification Type | Trigger                   |
+| ------------------------------------- | ----------------- | ------------------------- |
+| `message-liked`                       | `like`            | User likes a post         |
+| `user-followed`                       | `follow`          | User follows another user |
+| `post-reposted`                       | `repost`          | User reposts a post       |
+| `post-created` (with `replyToPostId`) | `reply`           | User replies to a post    |
+| `post-created` (with `mentions`)      | `mention`         | User mentions others      |
 
 ### Flow:
 
@@ -179,33 +190,29 @@ DynamoDB Table
 
 ## Quick Start
 
-### 1. Start DynamoDB Local
+### 1. Deploy DynamoDB with Terraform
 
 ```bash
-# Using Docker
-docker run -d -p 8000:8000 --name dynamodb-local amazon/dynamodb-local
+cd infrastructure/staging
+terraform init
+terraform plan
+terraform apply
 ```
 
-### 2. Create DynamoDB Tables
-
-```bash
-npm run dynamodb:create-tables
-```
-
-### 3. Start Infrastructure
+### 2. Start Infrastructure
 
 ```bash
 # Start Kafka, MySQL, Redis, Elasticsearch
 npm run docker:up
 ```
 
-### 4. Start Application
+### 3. Start Application
 
 ```bash
 npm run start:api-gateway
 ```
 
-### 5. Test
+### 4. Test
 
 Follow the testing guide: [`apps/api-gateway/src/modules/notifications/TESTING.md`](apps/api-gateway/src/modules/notifications/TESTING.md)
 
@@ -213,30 +220,52 @@ Follow the testing guide: [`apps/api-gateway/src/modules/notifications/TESTING.m
 
 ## Production Deployment
 
-### 1. Use AWS DynamoDB
+### 1. Deploy with Terraform
+
+```bash
+# Copy staging configuration
+cp -r infrastructure/staging infrastructure/production
+
+# Update production settings
+cd infrastructure/production
+vim terraform.tfvars
+
+# Set production values:
+# - dynamodb_notifications_table_name = "prod-user-notifications"
+# - dynamodb_pitr_enabled = true
+# - dynamodb_prevent_destroy = true
+# - dynamodb_enable_alarms = true
+
+# Deploy
+terraform init
+terraform plan
+terraform apply
+```
+
+### 2. Update Application Environment
 
 Update `.env`:
+
 ```bash
-# Remove or comment out DYNAMODB_ENDPOINT
-# DYNAMODB_ENDPOINT=http://localhost:8000
 DYNAMODB_NOTIFICATIONS_TABLE=prod-user-notifications
+AWS_REGION=us-east-1
 ```
 
-### 2. Create Production Table
+### 3. Verify Configuration
+
+TTL, PITR, and CloudWatch alarms are automatically configured by Terraform.
+
+Verify:
 
 ```bash
-export NODE_ENV=production
-npm run dynamodb:create-tables
+terraform output dynamodb_notifications_table_name
+aws dynamodb describe-table --table-name prod-user-notifications
 ```
-
-### 3. Enable TTL
-
-AWS Console → DynamoDB → Tables → `prod-user-notifications` → Additional settings → TTL
-- Enable TTL with attribute name: `ttl`
 
 ### 4. Monitor with CloudWatch
 
 Key metrics:
+
 - `ConsumedReadCapacityUnits`
 - `ConsumedWriteCapacityUnits`
 - `UserErrors` (throttling)
@@ -247,11 +276,13 @@ Key metrics:
 ## Cost Estimation
 
 ### Example Scenario:
+
 - 1 million users
 - 10 notifications per user per day
 - 90-day retention (TTL)
 
 ### Monthly Costs:
+
 - **Writes**: 10M/day × 30 days = 300M writes/month
   - Cost: 300M × $1.25/million = **$375/month**
 - **Reads**: 50M/day × 30 days = 1.5B reads/month
@@ -263,6 +294,7 @@ Key metrics:
 **Total: ~$762.50/month** for 1M users
 
 Compare to:
+
 - MySQL RDS (db.r5.large): ~$1,200/month + storage
 - Redis ElastiCache (cache.r5.large): ~$800/month
 
@@ -271,15 +303,18 @@ Compare to:
 ## Performance Characteristics
 
 ### Latency:
+
 - Read (single user): **1-5ms**
 - Write (single notification): **1-5ms**
 - Paginated query (20 items): **5-10ms**
 
 ### Throughput:
+
 - On-demand mode: **Unlimited**
 - Burst capacity: Handles sudden spikes automatically
 
 ### Scalability:
+
 - Horizontal: Automatic partition splitting
 - Vertical: No limits on item size (up to 400KB per item)
 
@@ -288,25 +323,33 @@ Compare to:
 ## Next Steps / Future Enhancements
 
 ### 1. Real-Time Push Notifications
+
 Use DynamoDB Streams + Lambda + WebSockets:
+
 ```
 DynamoDB Stream → Lambda Function → API Gateway WebSocket → Client
 ```
 
 ### 2. Mobile Push Notifications
+
 Integrate with Firebase Cloud Messaging (FCM) or AWS SNS:
+
 ```
 Notification Created → SNS Topic → Mobile Device
 ```
 
 ### 3. Email Digests
+
 Daily/weekly notification summaries:
+
 ```
 Cron Job → Query Unread Notifications → AWS SES Email
 ```
 
 ### 4. Notification Preferences
+
 Let users configure notification types:
+
 ```
 DynamoDB Table: user-preferences
 PK: USER#<userId>
@@ -314,7 +357,9 @@ Attributes: { likeNotifs: true, followNotifs: false, ... }
 ```
 
 ### 5. Advanced Queries
+
 Add Global Secondary Index (GSI) for:
+
 - Query by notification type
 - Query by actor (who triggered it)
 - Analytics queries
@@ -325,26 +370,27 @@ Add Global Secondary Index (GSI) for:
 
 ### DynamoDB vs MySQL:
 
-| Feature | DynamoDB | MySQL |
-|---------|----------|-------|
-| **Schema** | Schemaless | Fixed schema |
-| **Scalability** | Automatic | Manual sharding |
-| **Write Speed** | Millions/sec | ~10K/sec |
-| **Query Flexibility** | Limited (PK/SK) | SQL (JOIN, etc.) |
-| **Maintenance** | None | Backups, upgrades |
-| **Cost Model** | Pay-per-request | Fixed server cost |
+| Feature               | DynamoDB        | MySQL             |
+| --------------------- | --------------- | ----------------- |
+| **Schema**            | Schemaless      | Fixed schema      |
+| **Scalability**       | Automatic       | Manual sharding   |
+| **Write Speed**       | Millions/sec    | ~10K/sec          |
+| **Query Flexibility** | Limited (PK/SK) | SQL (JOIN, etc.)  |
+| **Maintenance**       | None            | Backups, upgrades |
+| **Cost Model**        | Pay-per-request | Fixed server cost |
 
 ### DynamoDB vs Redis:
 
-| Feature | DynamoDB | Redis |
-|---------|----------|-------|
-| **Persistence** | Durable | Volatile (unless AOF) |
-| **Latency** | 1-5ms | <1ms |
-| **TTL** | Built-in | Built-in |
-| **Complex Queries** | Limited | Rich data structures |
-| **Scalability** | Automatic | Manual clustering |
+| Feature             | DynamoDB  | Redis                 |
+| ------------------- | --------- | --------------------- |
+| **Persistence**     | Durable   | Volatile (unless AOF) |
+| **Latency**         | 1-5ms     | <1ms                  |
+| **TTL**             | Built-in  | Built-in              |
+| **Complex Queries** | Limited   | Rich data structures  |
+| **Scalability**     | Automatic | Manual clustering     |
 
 ### When to Use DynamoDB:
+
 ✅ High write volume (millions/sec)
 ✅ Time-series data
 ✅ Serverless architecture
@@ -352,6 +398,7 @@ Add Global Secondary Index (GSI) for:
 ✅ Event-driven systems
 
 ### When NOT to Use DynamoDB:
+
 ❌ Complex queries (JOINs, aggregations)
 ❌ Strong consistency across multiple items
 ❌ Transactions across multiple tables
@@ -387,6 +434,7 @@ Add Global Secondary Index (GSI) for:
 ## Summary
 
 This implementation demonstrates:
+
 1. ✅ **DynamoDB as a primary database** for a feature (notifications)
 2. ✅ **Event-driven architecture** with Kafka integration
 3. ✅ **NoSQL data modeling** with partition/sort keys
@@ -396,6 +444,7 @@ This implementation demonstrates:
 The notifications system showcases DynamoDB's strengths: high throughput, low latency, automatic scaling, and built-in TTL for time-series data.
 
 **Use this as a reference for adding DynamoDB to other features like:**
+
 - User activity feeds/timelines
 - Real-time analytics
 - Session storage

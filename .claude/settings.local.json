@@ -5,7 +5,10 @@
       "Bash(npm run:*)",
       "Bash(git log:*)",
       "Bash(npm install:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(aws sts get-caller-identity:*)",
+      "Bash(echo:*)",
+      "Bash(AWS_PROFILE=default aws sts get-caller-identity:*)"
     ],
     "deny": [],
     "ask": []

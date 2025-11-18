@@ -1,0 +1,70 @@
+# -------------------------
+# AWS CONFIGURATION
+# -------------------------
+aws_region = "us-east-1"
+
+# -------------------------
+# EC2 CONFIGURATION
+# -------------------------
+ami_id        = "ami-0c55b159cbfafe1f0"  # Replace with your AMI ID
+instance_type = "t3.medium"
+key_name      = "your-key-pair-name"     # Replace with your key pair name
+
+# -------------------------
+# NETWORKING CONFIGURATION
+# -------------------------
+vpc_id              = ""  # Auto-created by Terraform
+subnet_id           = ""  # Auto-created by Terraform
+security_group_name = "staging-security-group"
+ssh_cidr_block      = ""  # Leave empty to auto-detect your IP, or specify like "1.2.3.4/32"
+
+# -------------------------
+# EC2 PUBLIC IP
+# -------------------------
+associate_public_ip = false  # Set to true if you need public IP before EIP association
+
+# -------------------------
+# DYNAMODB CONFIGURATION
+# -------------------------
+
+# Table name
+dynamodb_notifications_table_name = "staging-user-notifications"
+
+# Billing mode: "PAY_PER_REQUEST" (on-demand) or "PROVISIONED"
+# Recommended: PAY_PER_REQUEST for staging/variable workloads
+dynamodb_billing_mode = "PAY_PER_REQUEST"
+
+# DynamoDB Streams (for real-time processing, Lambda triggers, etc.)
+dynamodb_stream_enabled   = true
+dynamodb_stream_view_type = "NEW_AND_OLD_IMAGES"  # Options: KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES
+
+# Time To Live (TTL) - Automatically delete old notifications
+dynamodb_ttl_enabled        = true
+dynamodb_ttl_attribute_name = "ttl"
+
+# Point-in-Time Recovery (PITR) - Continuous backups
+# Set to true for production, false for staging to save costs
+dynamodb_pitr_enabled = false
+
+# Prevent accidental deletion
+# Set to true for production, false for staging
+dynamodb_prevent_destroy = false
+
+# CloudWatch Alarms
+# Set to true to enable monitoring and alerting
+dynamodb_enable_alarms = false
+
+# -------------------------
+# PRODUCTION EXAMPLE
+# -------------------------
+# For production environments, use these settings:
+#
+# dynamodb_notifications_table_name = "prod-user-notifications"
+# dynamodb_billing_mode              = "PAY_PER_REQUEST"
+# dynamodb_stream_enabled            = true
+# dynamodb_stream_view_type          = "NEW_AND_OLD_IMAGES"
+# dynamodb_ttl_enabled               = true
+# dynamodb_ttl_attribute_name        = "ttl"
+# dynamodb_pitr_enabled              = true
+# dynamodb_prevent_destroy           = true
+# dynamodb_enable_alarms             = true
