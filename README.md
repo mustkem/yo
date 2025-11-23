@@ -36,13 +36,6 @@ Yo is a Twitter Clone.
 3. **Microservice Communication**  
    Kafka enables decoupled communication between services for handling async operations.
 
-### To-Do
-
-- [x] Add Kafka config module using `@nestjs/config`
-- [x] Setup Kafka producer and consumer service
-- [x] Emit and listen to example events (e.g., user.created)
-- [ ] Add retry logic and dead-letter queue (DLQ) support
-- [ ] Document event schemas and versioning
 
 ## Installation
 
